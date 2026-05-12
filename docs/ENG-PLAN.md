@@ -1021,10 +1021,11 @@ GET  /health            → { "ok": true }
 | 2026-05-12 | **D10: Turborepo + frontend/backend 분류** | bun workspaces 위에 Turborepo 추가. `frontend/mobile-web/` + `backend/{server, ai-tts}/` + `shared/types/`. `turbo.json` pipeline으로 dev/build/test/lint 통합. `bun run dev` 한 명령으로 docker compose up + expo metro 동시 실행. 캐싱 + 변경 감지 + 의존성 그래프 |
 | 2026-05-12 | **D11: Pre-commit + CI/CD (GitHub Actions)** | Pre-commit: 초기 simple-git-hooks 시도 → bun `.bun/<pkg>@<ver>/` postinstall 호환 X (Day 2b CI fail) → **husky 9 + lint-staged**로 교체 (2026-05-13). 변경 파일만 Biome check + tsc --noEmit. CI: turbo lint/typecheck + docker buildx cache. Turbo Remote Cache는 Vercel token 추후. CD: 모바일 EAS Update PR preview + main → TestFlight. 백엔드 GHCR docker image push. Phase 1 +0.5일 |
 | 2026-05-12 | **D12: 원테이크 워크플로 (Scaffold Day + 인터페이스 freeze)** | Phase 1 Day 3을 Scaffold Day로. 모든 폴더/파일 stub + shared/types/ + 서비스 함수 시그니처 + Zustand store 골격 미리 생성. Phase 2-7은 *stub 채우기만* — 파일 추가/이동/구조 변경 금지. 매 Phase 끝에 `원테이크 → 확인 (typecheck+test+manual) → 리뷰 (PR+CI green)` 사이클. Interface Spec 섹션에 freeze 시그니처 박음. 새 D 결정 없이 구조 변경 X |
+| 2026-05-13 | **D13: 하네스 구축 — agent team 자동화 + D12 가드** | Phase 1 마무리 시점에 `.claude/agents/` 5개 + `.claude/skills/` 3개 박음. agents: lane-frontend · lane-backend · lane-tts · design-guard · scaffold-guard (모두 model: opus). skills: phase-cycle (오케스트레이터) · scaffold-spawn (Lane team spawn 패턴) · eng-plan-keeper (Decisions Log 갱신). Phase 2-7 매 phase 마다 `phase-cycle` 호출로 *원테이크 → 검증 → guards → commit → CI → 머지* 통합. design-guard 가 DESIGN.md 위반 (금지 폰트 · hex 색 · 거품 radius · UI 이모지) 자동 감지, scaffold-guard 가 D12 freeze 위반 + signature 변경 영향 분석. CLAUDE.md 에 하네스 포인터 + 변경 이력 등록 |
 
 ---
 
-**Status: APPROVED (2nd review 2026-05-12, D9-D12 모노레포+Docker+Turborepo+DevOps+Scaffold freeze 반영) — Phase 0 사전 준비 후 Phase 1 시작 가능. ~4.6주 후 친구 5명 TestFlight 검증.**
+**Status: APPROVED + Phase 1 완료 (2026-05-13, D1-D13 반영, 하네스 박힘) — Phase 2 (Shell, Day 5-6) 시작 가능. PR #1 머지 대기. 잔여 ~3.8주.**
 
 ---
 
@@ -1033,7 +1034,7 @@ GET  /health            → { "ok": true }
 | Review | Trigger | Why | Runs | Status | Findings |
 |--------|---------|-----|------|--------|----------|
 | CEO Review | `/plan-ceo-review` | Scope & strategy | 0 | — | (안 함, /office-hours로 대체) |
-| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 2 | **CLEAR (PLAN)** | 2차 리뷰: 12 decisions (D1-D12) 완료. D9 모노레포+Docker, D10 Turborepo/frontend·backend, D11 Pre-commit+CI/CD, D12 원테이크+Scaffold freeze 반영 |
+| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 2 | **CLEAR (PLAN)** + Phase 1 완료 | 2차 리뷰: 13 decisions (D1-D13) 완료. Phase 1 (Day 1-3) 실행 끝, CI green, scaffold-freeze tag 박힘. D13 하네스 (5 agents + 3 skills) Phase 2-7 자동화 준비 |
 | Design Review | `/plan-design-review` | UI/UX gaps | 0 | — | 권장 (4 화면 코딩 시작 전) |
 | Codex Review | `/codex review` | Independent 2nd opinion | 0 | — | 권장 (코딩 후) |
 
@@ -1045,15 +1046,16 @@ GET  /health            → { "ok": true }
 
 **UNRESOLVED:** 2 (production hosting + production LLM provider — Phase 7 결정)
 
-**VERDICT:** ENG CLEARED (2nd, D9-D12 추가) — Phase 0 사전 준비 후 Phase 1 시작 가능. D1-D12 적용된 ENG-PLAN.md 따라 *원테이크 워크플로*.
+**VERDICT:** ENG CLEARED (2nd, D9-D13) — Phase 1 실행 완료 (Day 1-3 + 하네스). PR #1 머지 대기. **Phase 2 (Shell)** 부터는 `phase-cycle` 하네스 트리거로 진행.
 
-**D9-D12 추가사항:**
+**D9-D13 추가사항:**
 - Tech Stack: **Turborepo** + bun workspaces + Docker Compose + Expo Web + **husky 9 + GitHub Actions** (D11 Day 2b 중 simple-git-hooks → husky 교체)
-- File Structure: **`frontend/mobile-web/` + `backend/{server, ai-tts}/` + `shared/types/` + `.github/workflows/`** (frontend/backend 분류 + CI/CD)
+- File Structure: **`frontend/mobile-web/` + `backend/{server, ai-tts}/` + `shared/types/` + `.github/workflows/` + `.claude/{agents,skills}/`** (frontend/backend 분류 + CI/CD + 하네스)
 - Architecture: docker-compose는 backend 전용 (server + ai-tts). frontend는 host metro
 - Turborepo: `turbo.json` 으로 dev/build/test/lint pipeline. **`bun run dev` 한 명령으로 모두 실행**
-- DevOps: pre-commit (Biome + tsc) · CI (PR/main turbo lint/test/build) · CD (EAS Update preview · GHCR docker push)
+- DevOps: pre-commit (Biome + tsc) · CI (PR/main turbo lint/test/build · docker buildx cache) · CD (EAS Update preview · GHCR docker push)
 - **D12 원테이크:** Phase 1 Day 3에 **Scaffold Day** — 모든 파일 stub + Interface Spec freeze. Phase 2-7은 stub 채우기만 (파일 추가/이동 X). 매 Phase 끝 `원테이크 → 확인 → 리뷰` 사이클 + 완료 체크리스트
-- Phase 0 (Day 0 prep) + Phase 1 (Day 1-4) + Phase 2-7 → 23 작업일 ≈ ~4.6주
-- Worktree Parallelization: 3 lane (mobile-web · server · ai-tts) 병렬 가능
-- TODOs: Docker Desktop, 호스트 `claude login`, bun-expo metro 호환, Web 플랫폼 분기, Turbo Remote Cache, Expo Token, GHCR 권한, ★ git tag `scaffold-freeze` (Phase 1 끝)
+- **D13 하네스:** `.claude/agents/` 5개 (lane-frontend · lane-backend · lane-tts · design-guard · scaffold-guard, 모두 model: opus) + `.claude/skills/` 3개 (phase-cycle 오케스트레이터 · scaffold-spawn · eng-plan-keeper). Phase 2-7 자동화 + D12 freeze 가드 + DESIGN.md 가드. CLAUDE.md 에 트리거 포인터 박힘
+- Phase 1 실측: Day 1-3 + 하네스 = 1.5일 (집중 작업). 총 잔여 ~3.8주 (Phase 2-7)
+- Worktree Parallelization: 3 lane (mobile-web · server · ai-tts) — D13 하네스로 자동 spawn
+- TODOs (Phase 7 시점): Production hosting · Production LLM provider · Naver Clova Voice (Edge TTS → Clova 교체) · Apple Developer 계정 · Turbo Remote Cache
