@@ -10,6 +10,7 @@
     "test": "echo 'TODO: vitest (Day 2a)'"
   },
   "dependencies": {
+    "@trip/types": "workspace:*",
     "hono": "^4.6.13"
   },
   "devDependencies": {

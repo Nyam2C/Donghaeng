@@ -21,6 +21,7 @@
       "name": "@trip/server",
       "version": "0.0.0",
       "dependencies": {
+        "@trip/types": "workspace:*",
         "hono": "^4.6.13",
       },
       "devDependencies": {

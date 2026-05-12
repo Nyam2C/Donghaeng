@@ -80,5 +80,8 @@ coverage/
 *.tmp
 *.bak
 
+# Claude Code local config (host 환경별)
+.claude/
+
 # Backup
 docs/design-preview_back_up.html

@@ -1,5 +1,10 @@
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'
+import { intentRoutes } from './routes/intent'
+import { llmRoutes } from './routes/llm'
+import { poiRoutes } from './routes/poi'
+import { ttsProxyRoutes } from './routes/tts-proxy'
+import { weatherRoutes } from './routes/weather'
 
 const app = new Hono()
 
@@ -13,12 +18,11 @@ app.get('/health', (c) =>
   }),
 )
 
-// Phase 3+ 에서 채울 routes (D12 Scaffold Day Day 3에 stub 추가):
-//   /api/llm        — Claude Code CLI spawn (D2 ID validation)
-//   /api/intent     — D4 intent extraction
-//   /api/poi        — Kakao Local proxy
-//   /api/weather    — OpenWeather proxy (D3 foreground catchup)
-//   /api/tts-proxy  — ai-tts:8000/synthesize 중계
+app.route('/api/llm', llmRoutes)
+app.route('/api/intent', intentRoutes)
+app.route('/api/poi', poiRoutes)
+app.route('/api/weather', weatherRoutes)
+app.route('/api/tts-proxy', ttsProxyRoutes)
 
 export default {
   port: 3000,

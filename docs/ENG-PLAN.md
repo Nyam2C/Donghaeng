@@ -36,7 +36,7 @@ Status: APPROVED — 코딩 시작 가능
 | 타입 | TypeScript **strict mode** | `"strict": true` 처음부터 |
 | 단위 테스트 | **Vitest** (D7) | services/* unit test. bun 호환 |
 | LLM eval | **promptfoo** (D7) | hallucination · 친구 톤 · intent · user-style 4 suite |
-| **Pre-commit hook** | **simple-git-hooks + lint-staged** (D11) | bun 친화 (husky 대비 경량). 커밋 시 변경 파일만 Biome check + tsc --noEmit |
+| **Pre-commit hook** | **husky 9 + lint-staged** (D11, 갱신) | 초기 simple-git-hooks 시도 → postinstall이 bun `.bun/<pkg>@<ver>/` 구조 비호환 (CI도 fail). husky 9가 bun 친화 standard. 커밋 시 변경 파일만 Biome check + tsc --noEmit |
 | **CI** | **GitHub Actions** (D11) | PR + main push → bun install + turbo lint/typecheck/test/build 병렬. Turbo Remote Cache 무료 활용 |
 | **CD (모바일)** | **EAS Update** (PR preview) + **EAS Build** (main → TestFlight) | Apple Developer 계정 셋업 후 활성화 (Phase 7) |
 | **CD (백엔드)** | **GHCR + docker buildx** | main 머지 시 server/ai-tts 이미지 build & push. Phase 7 hosting 결정 후 deploy |
@@ -210,7 +210,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 ```
 trip/
 ├── docker-compose.yml           # ★ backend services (server + ai-tts)
-├── package.json                 # turborepo + bun workspaces root + simple-git-hooks config
+├── package.json                 # turborepo + bun workspaces root + husky/lint-staged config
 ├── turbo.json                   # ★ Turborepo pipeline (dev/build/test/lint)
 ├── bun.lockb
 ├── tsconfig.base.json
@@ -352,31 +352,33 @@ bun --filter @trip/server dev   # 특정 패키지만
 
 ## DevOps (Pre-commit + CI/CD — D11)
 
-### Pre-commit hook (simple-git-hooks + lint-staged)
+### Pre-commit hook (husky 9 + lint-staged)
 
-**왜 husky가 아니라 simple-git-hooks?** bun 환경 친화 (postinstall 단계 X, native-style git hook 직접 작성), 코드 < 100줄, 의존성 0개. husky는 풍부하지만 monorepo + bun 조합에선 과함.
+**왜 husky?** 초기 simple-git-hooks 시도 → bun의 `.bun/<pkg>@<ver>/` 디렉터리 구조와 postinstall 호환 X (CI 환경에서도 동일 fail). 실제 결과 보고 husky 9 로 교체 (Day 2b 중 발생, D11 갱신). husky는 npm/bun/yarn 모두 검증된 standard.
 
 **package.json (root) 설정:**
 
 ```json
 {
   "scripts": {
-    "prepare": "simple-git-hooks"
-  },
-  "simple-git-hooks": {
-    "pre-commit": "bun run lint-staged && bun run typecheck",
-    "commit-msg": "bun run commitlint -- --edit ${1}"
+    "prepare": "husky"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx}": ["biome check --apply --no-errors-on-unmatched"],
-    "*.{json,md,yml,yaml}": ["biome format --write --no-errors-on-unmatched"]
+    "*.{ts,tsx,js,jsx,json,md,yml,yaml}": ["biome check --write --no-errors-on-unmatched"]
   },
   "devDependencies": {
-    "simple-git-hooks": "^2.x",
+    "husky": "^9.1.7",
     "lint-staged": "^15.x"
   }
 }
 ```
+
+**`.husky/pre-commit`:**
+```sh
+bun run lint-staged && bun run typecheck
+```
+
+**셋업:** `bun install` 시 `prepare = husky` 가 자동 실행 → `.husky/_/` wrapper 생성 + `git config core.hooksPath .husky`. 매 clone/CI 후 동일하게 동작.
 
 **typecheck**는 turbo로 — root에 `"typecheck": "turbo run typecheck"` 추가, 각 패키지에 `"typecheck": "tsc --noEmit"`. Turborepo 캐싱으로 변경 없으면 1초 안에 끝.
 
@@ -526,9 +528,9 @@ Phase 1 — 환경 + Turborepo + Docker + DevOps (Day 1-4)
 │   ├─ metro.config.js: workspace root watchFolders (모노레포 호환)
 │   └─ ★ `bun run dev` 확인 — turbo가 docker compose up + expo start 동시에 띄움
 ├─ Day 2b — DevOps (D11)
-│   ├─ `bun add -D simple-git-hooks lint-staged` (root)
-│   ├─ package.json에 `simple-git-hooks` + `lint-staged` 설정 + `prepare` script
-│   ├─ `bunx simple-git-hooks` 실행 → `.git/hooks/pre-commit` 생성
+│   ├─ `bun add -D husky lint-staged` (root) — 초기 simple-git-hooks → husky 9 교체 (D11 갱신)
+│   ├─ package.json에 `lint-staged` config + `prepare: "husky"` script
+│   ├─ `bunx husky init` 실행 → `.husky/{_,pre-commit}` 생성 + `core.hooksPath`
 │   ├─ 더미 commit 1회로 pre-commit 동작 확인 (Biome check + tsc --noEmit)
 │   ├─ `.github/workflows/ci.yml` 작성 — lint + typecheck만 우선
 │   ├─ Turbo Remote Cache 셋업: `bunx turbo login` + `bunx turbo link` (Vercel 계정)
@@ -1017,7 +1019,7 @@ GET  /health            → { "ok": true }
 | 2026-05-12 | **D9-a: 모바일 + 웹 한 codebase (Expo Web)** | Expo Router는 web first-class 지원. 같은 `packages/mobile-web/app/` 라우트가 두 플랫폼에서 동작. 90% 코드 공유. Platform-specific만 `.native.tsx`/`.web.tsx` 분리 (react-native-maps · track-player · expo-speech-recognition) |
 | 2026-05-12 | **D9-b: LLM은 server 컨테이너에서 Claude Code CLI spawn** | 별도 AI 컨테이너 X. server가 `claude` binary를 자식 프로세스로 실행. streaming은 stdout pipe. 인증은 호스트 `~/.claude/` bind mount (OAuth 토큰). 환경변수 X. AI 도커는 TTS 전용 (Python edge-tts) |
 | 2026-05-12 | **D10: Turborepo + frontend/backend 분류** | bun workspaces 위에 Turborepo 추가. `frontend/mobile-web/` + `backend/{server, ai-tts}/` + `shared/types/`. `turbo.json` pipeline으로 dev/build/test/lint 통합. `bun run dev` 한 명령으로 docker compose up + expo metro 동시 실행. 캐싱 + 변경 감지 + 의존성 그래프 |
-| 2026-05-12 | **D11: Pre-commit (simple-git-hooks) + CI/CD (GitHub Actions)** | husky 대신 simple-git-hooks (bun 친화, 경량). 변경 파일만 Biome check + tsc --noEmit. CI: lint/typecheck/test/build turbo 병렬 + Turbo Remote Cache 무료. CD: 모바일 EAS Update PR preview + main → TestFlight. 백엔드 GHCR docker image push. Phase 1 +0.5일 |
+| 2026-05-12 | **D11: Pre-commit + CI/CD (GitHub Actions)** | Pre-commit: 초기 simple-git-hooks 시도 → bun `.bun/<pkg>@<ver>/` postinstall 호환 X (Day 2b CI fail) → **husky 9 + lint-staged**로 교체 (2026-05-13). 변경 파일만 Biome check + tsc --noEmit. CI: turbo lint/typecheck + docker buildx cache. Turbo Remote Cache는 Vercel token 추후. CD: 모바일 EAS Update PR preview + main → TestFlight. 백엔드 GHCR docker image push. Phase 1 +0.5일 |
 | 2026-05-12 | **D12: 원테이크 워크플로 (Scaffold Day + 인터페이스 freeze)** | Phase 1 Day 3을 Scaffold Day로. 모든 폴더/파일 stub + shared/types/ + 서비스 함수 시그니처 + Zustand store 골격 미리 생성. Phase 2-7은 *stub 채우기만* — 파일 추가/이동/구조 변경 금지. 매 Phase 끝에 `원테이크 → 확인 (typecheck+test+manual) → 리뷰 (PR+CI green)` 사이클. Interface Spec 섹션에 freeze 시그니처 박음. 새 D 결정 없이 구조 변경 X |
 
 ---
@@ -1046,7 +1048,7 @@ GET  /health            → { "ok": true }
 **VERDICT:** ENG CLEARED (2nd, D9-D12 추가) — Phase 0 사전 준비 후 Phase 1 시작 가능. D1-D12 적용된 ENG-PLAN.md 따라 *원테이크 워크플로*.
 
 **D9-D12 추가사항:**
-- Tech Stack: **Turborepo** + bun workspaces + Docker Compose + Expo Web + **simple-git-hooks + GitHub Actions**
+- Tech Stack: **Turborepo** + bun workspaces + Docker Compose + Expo Web + **husky 9 + GitHub Actions** (D11 Day 2b 중 simple-git-hooks → husky 교체)
 - File Structure: **`frontend/mobile-web/` + `backend/{server, ai-tts}/` + `shared/types/` + `.github/workflows/`** (frontend/backend 분류 + CI/CD)
 - Architecture: docker-compose는 backend 전용 (server + ai-tts). frontend는 host metro
 - Turborepo: `turbo.json` 으로 dev/build/test/lint pipeline. **`bun run dev` 한 명령으로 모두 실행**
