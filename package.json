@@ -5,8 +5,9 @@
   "description": "AI 여행 컴패니언 — 친구가 옆에 있는 그 리듬",
   "workspaces": ["frontend/*", "backend/server", "backend/ai-tts", "shared/*"],
   "scripts": {
-    "dev": "docker compose up -d && turbo run dev",
-    "dev:fg": "turbo run dev",
+    "dev": "docker compose up -d && turbo run dev --filter=@trip/mobile-web",
+    "dev:fg": "turbo run dev --filter=@trip/mobile-web",
+    "dev:all": "turbo run dev",
     "build": "turbo run build",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
@@ -23,7 +24,8 @@
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "turbo": "^2.5.5",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "^2"
   },
   "packageManager": "bun@1.3.13",
   "engines": {
