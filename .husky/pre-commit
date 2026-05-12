@@ -1,1 +1,10 @@
+#!/bin/sh
+# nvm + bun 을 non-interactive shell PATH 에 활성화
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+  . "$NVM_DIR/nvm.sh" >/dev/null 2>&1
+  nvm use --silent default >/dev/null 2>&1 || true
+fi
+export PATH="$HOME/.bun/bin:$PATH"
+
 bun run lint-staged && bun run typecheck
