@@ -1,0 +1,10 @@
+# 동행 v1 — bun install 설정
+#
+# linker = "hoisted": Expo Metro resolver 호환 (D9 갱신 · Phase 2)
+#   - 기본 "isolated" 는 node_modules/.bun/<pkg>@<ver>/node_modules/<pkg> 중첩 구조
+#   - Metro 의 nodeModulesPaths 가 그 안 transitive deps 못 찾음
+#   - hoisted 는 npm 처럼 flat: 모든 transitive 가 node_modules/ 최상위로 노출
+#   - 첫 metro bundle 시 @expo/metro-runtime · expo-modules-core · debug
+#     · @react-navigation/core · @babel/runtime 등 누락 반복 발견 → 근본 해결
+[install]
+linker = "hoisted"
