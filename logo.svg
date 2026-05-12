@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 70" role="img" aria-label="곁 (Gyeot)">
+  <title>곁 · Gyeot</title>
+  <desc>두 잉크 점 — 사용자(큰 점)와 옆에 있는 컴패니언(작은 점)</desc>
+  <g fill="#4A6FA5">
+    <ellipse cx="38" cy="36" rx="18" ry="17" opacity="0.92"/>
+    <ellipse cx="32" cy="30" rx="6" ry="5" opacity="0.42"/>
+    <circle cx="44" cy="40" r="3" opacity="0.55"/>
+    <circle cx="74" cy="40" r="10" opacity="0.88"/>
+    <circle cx="72" cy="37" r="3" opacity="0.42"/>
+  </g>
+</svg>

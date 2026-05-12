@@ -1,0 +1,2615 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>동행 (Donghaeng) · 디자인 시스템 프리뷰</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css" />
+<style>
+:root {
+  --bg: #F5EFE3;
+  --bg-elev: #FFFFFF;
+  --text: #1F1F1F;
+  --text-muted: #6B6258;
+  --text-soft: #7A7065;
+  --celadon: #4A6FA5;
+  --celadon-soft: #6B89B5;
+  --celadon-deep: #2E4E7F;
+  --celadon-tint: rgba(74, 111, 165, 0.08);
+  --hanji: #F5EFE3;
+  --moss: #5F8B6E;
+  --amber: #E8B860;
+  --amber-tint: rgba(232, 184, 96, 0.15);
+  --juhong: #C24A36;
+  --juhong-soft: #D87060;
+  --line: rgba(31, 31, 31, 0.08);
+  --line-strong: rgba(31, 31, 31, 0.15);
+  --shadow-sm: 0 1px 2px rgba(31, 31, 31, 0.04), 0 0 0 1px rgba(31, 31, 31, 0.04);
+  --shadow-md: 0 4px 16px rgba(31, 31, 31, 0.06), 0 0 0 1px rgba(31, 31, 31, 0.04);
+  --shadow-lg: 0 24px 60px rgba(31, 31, 31, 0.12), 0 0 0 1px rgba(31, 31, 31, 0.05);
+}
+[data-theme="dark"] {
+  --bg: #1A1F2A;
+  --bg-elev: #232938;
+  --text: #F5EFE3;
+  --text-muted: #B8B0A5;
+  --text-soft: #6B6F7A;
+  --celadon: #88A5D4;
+  --celadon-soft: #6B89B5;
+  --celadon-deep: #B0C5E8;
+  --celadon-tint: rgba(136, 165, 212, 0.10);
+  --hanji: #1A1F2A;
+  --moss: #88B098;
+  --amber: #E8C680;
+  --amber-tint: rgba(232, 198, 128, 0.15);
+  --juhong: #E3725E;
+  --juhong-soft: #C9614F;
+  --line: rgba(245, 239, 227, 0.08);
+  --line-strong: rgba(245, 239, 227, 0.15);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.4);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-feature-settings: "ss06", "ss07";
+  min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse at 15% 10%, rgba(74, 111, 165, 0.05) 0%, transparent 60%),
+    radial-gradient(ellipse at 85% 80%, rgba(232, 184, 96, 0.04) 0%, transparent 60%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence baseFrequency='0.8' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.45 0 0 0 0 0.38 0 0 0 0.04 0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.page {
+  max-width: 1680px;
+  margin: 0 auto;
+  padding: 56px 32px 96px;
+}
+.brand {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 48px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+.brand-title {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 500;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+}
+.brand-title em { font-style: normal; color: var(--celadon); }
+.brand-meta {
+  font-size: 13px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+.theme-toggle {
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.theme-toggle:hover { border-color: var(--celadon); color: var(--celadon); }
+.hero { margin-bottom: 64px; }
+.hero h1 {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 500;
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  margin: 0 0 16px;
+  max-width: 720px;
+}
+.hero h1 .accent { font-style: italic; color: var(--celadon); }
+.hero p {
+  font-size: 16px;
+  color: var(--text-muted);
+  max-width: 720px;
+  margin: 0;
+  line-height: 1.7;
+}
+
+.section-label {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--celadon);
+  letter-spacing: 0.04em;
+  margin: 64px 0 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.section-label:first-of-type { margin-top: 0; }
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 56px 40px;
+  margin-bottom: 24px;
+}
+.phone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.phone-num {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--celadon);
+  margin-bottom: 12px;
+  letter-spacing: 0.06em;
+}
+.phone-frame {
+  width: 360px;
+  max-width: 100%;
+  height: 740px;
+  background: var(--bg-elev);
+  border-radius: 44px;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--line);
+}
+.phone-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-elev);
+}
+.status-bar {
+  height: 44px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24px;
+  font-size: 13px;
+  font-weight: 600;
+  font-feature-settings: "tnum";
+  color: var(--text);
+  flex-shrink: 0;
+}
+.status-bar .icons { display: flex; gap: 6px; opacity: 0.7; font-size: 10px; }
+.screen-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 20px 16px;
+}
+.screen-content::-webkit-scrollbar { display: none; }
+.tab-bar {
+  height: 64px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 16px 14px;
+  background: var(--bg-elev);
+  flex-shrink: 0;
+}
+.tab {
+  font-size: 10px;
+  color: var(--text-soft);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.tab.active { color: var(--celadon); }
+.tab-dot { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+
+/* Companion ink mark */
+.companion {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+}
+.companion svg { width: 100%; height: 100%; }
+.companion::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(74, 111, 165, 0.18) 0%, transparent 70%);
+  animation: breathe 4s ease-in-out infinite;
+}
+.companion.lg { width: 96px; height: 96px; }
+.companion.lg::before {
+  inset: -16px;
+  background: radial-gradient(circle, rgba(74, 111, 165, 0.25) 0%, transparent 65%);
+  animation: breathe-lg 3s ease-in-out infinite;
+}
+.companion.listening::after {
+  content: '';
+  position: absolute;
+  inset: -32px;
+  border: 1px solid var(--celadon);
+  border-radius: 50%;
+  opacity: 0;
+  animation: ring 2.4s ease-out infinite;
+}
+.companion.listening::before { animation-duration: 2s; }
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+@keyframes breathe-lg {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.12); opacity: 1; }
+}
+@keyframes ring {
+  0% { transform: scale(0.7); opacity: 0.7; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* Common UI */
+.greet {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0 4px;
+}
+.greet-name {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 20px;
+  font-weight: 500;
+}
+.greet-meta { font-size: 11px; color: var(--text-soft); margin-bottom: 20px; }
+.voice {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 400;
+  font-size: 17px;
+  line-height: 1.55;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin: 0 0 24px;
+  padding-left: 12px;
+  border-left: 2px solid var(--celadon);
+}
+.voice em { font-style: italic; color: var(--celadon); }
+.voice.sm { font-size: 14px; margin-bottom: 16px; }
+
+/* Tag chips */
+.tag-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.tag {
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  color: var(--text-muted);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tag.on {
+  background: var(--celadon);
+  color: #FAFAFA;
+  border-color: var(--celadon);
+}
+.tag .check { font-family: 'DM Mono', monospace; margin-right: 4px; opacity: 0.8; }
+
+/* Prompt input */
+.prompt-input {
+  display: flex;
+  align-items: center;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+  gap: 10px;
+  margin-top: auto;
+}
+.prompt-input .ph {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+.prompt-input .send {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--celadon);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+.cta-bottom {
+  margin-top: 16px;
+  background: var(--celadon);
+  color: #fff;
+  padding: 14px;
+  border-radius: 14px;
+  text-align: center;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* Recommendation card */
+.rec-card {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  margin-bottom: 10px;
+  align-items: center;
+}
+.rec-thumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+.rec-info { flex: 1; min-width: 0; }
+.rec-name {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0 0 2px;
+}
+.rec-reason { font-size: 11px; color: var(--text-muted); line-height: 1.45; }
+.rec-match {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 18px;
+  color: var(--celadon);
+  font-feature-settings: "tnum";
+  letter-spacing: -0.02em;
+}
+.rec-match .pct { font-size: 11px; color: var(--text-soft); margin-left: 2px; font-style: normal; font-family: 'DM Mono', monospace; }
+
+/* POI swipe card */
+.poi-row {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  margin-bottom: 8px;
+  align-items: center;
+}
+.poi-thumb { width: 52px; height: 52px; border-radius: 8px; flex-shrink: 0; }
+.poi-info { flex: 1; min-width: 0; }
+.poi-name { font-family: 'Noto Serif KR', serif; font-size: 14px; font-weight: 500; }
+.poi-meta { font-size: 11px; color: var(--text-soft); }
+.poi-actions { display: flex; gap: 4px; }
+.poi-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-elev);
+}
+.poi-btn.like { color: var(--juhong); border-color: var(--juhong-soft); }
+.poi-btn.skip { color: var(--text-soft); }
+
+/* Route card */
+.route-card {
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  margin-bottom: 10px;
+}
+.route-card.selected { border-color: var(--celadon); background: var(--celadon-tint); }
+.route-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.route-name { font-family: 'Noto Serif KR', serif; font-size: 15px; font-weight: 500; }
+.route-letter {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--celadon);
+}
+.route-map {
+  height: 56px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+}
+.route-map.a { background: linear-gradient(110deg, #4A6FA5 0%, #6B89B5 60%, #88A5D4 100%); }
+.route-map.b { background: linear-gradient(110deg, #5F8B6E 0%, #88B098 50%, #E8B860 100%); }
+.route-map.c { background: linear-gradient(110deg, #C24A36 0%, #E8B860 50%, #4A6FA5 100%); }
+.route-map::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.2), transparent 30%),
+              radial-gradient(circle at 70% 70%, rgba(255,255,255,0.15), transparent 25%);
+}
+.route-stats { display: flex; gap: 14px; font-size: 11px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+.route-stats .num { color: var(--text); }
+
+/* Booking row */
+.book-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  margin-bottom: 8px;
+}
+.book-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.book-info { flex: 1; min-width: 0; }
+.book-title { font-family: 'Noto Serif KR', serif; font-size: 14px; font-weight: 500; }
+.book-meta { font-size: 11px; color: var(--text-soft); font-family: 'DM Mono', monospace; }
+.book-status {
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+.book-status.done { background: rgba(95, 139, 110, 0.15); color: var(--moss); }
+.book-status.pending { background: var(--amber-tint); color: #8C6A1F; }
+.book-status.suggest { background: var(--celadon-tint); color: var(--celadon); }
+[data-theme="dark"] .book-status.pending { color: var(--amber); }
+.book-total {
+  margin-top: 12px;
+  padding: 14px;
+  background: var(--celadon-tint);
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.book-total .label { font-size: 12px; color: var(--text-muted); }
+.book-total .amount { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; color: var(--celadon-deep); font-feature-settings: "tnum"; }
+[data-theme="dark"] .book-total .amount { color: var(--celadon-deep); }
+
+/* Replan banner */
+.alert-banner {
+  background: var(--amber-tint);
+  border: 1px solid var(--amber);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.alert-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--amber);
+  color: #5A4515;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-weight: 600;
+}
+.alert-text { font-size: 13px; color: var(--text); }
+.alert-text strong { font-family: 'Noto Serif KR', serif; font-weight: 500; }
+
+.plan-compare { margin-bottom: 16px; }
+.plan-block {
+  padding: 12px 14px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+.plan-block.before {
+  background: var(--bg);
+  border: 1px dashed var(--line-strong);
+  opacity: 0.65;
+}
+.plan-block.after {
+  background: var(--celadon-tint);
+  border: 1px solid var(--celadon);
+}
+.plan-label {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--text-soft);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.plan-block.after .plan-label { color: var(--celadon); }
+.plan-list { font-family: 'Noto Serif KR', serif; font-size: 13px; line-height: 1.7; }
+.plan-list .stroke { text-decoration: line-through; opacity: 0.5; }
+
+.button-row { display: flex; gap: 8px; margin-top: 12px; }
+.btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--line-strong);
+}
+.btn.primary { background: var(--celadon); color: #fff; border-color: var(--celadon); }
+.btn.ghost { background: transparent; color: var(--text); }
+
+/* TTS active screen */
+.tts-screen { display: flex; flex-direction: column; align-items: center; padding: 40px 24px 24px; height: 100%; }
+.tts-history {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 12px;
+  color: var(--text-soft);
+  text-align: center;
+  margin-bottom: 36px;
+  line-height: 1.7;
+  opacity: 0.6;
+}
+.tts-companion { margin: 12px 0 28px; }
+.tts-voice {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.45;
+  text-align: center;
+  letter-spacing: -0.02em;
+  margin: 0 0 24px;
+  color: var(--text);
+}
+.tts-waves {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 40px;
+}
+.wave-bar {
+  width: 3px;
+  background: var(--celadon);
+  border-radius: 2px;
+  animation: wave 1.4s ease-in-out infinite;
+}
+.wave-bar:nth-child(1) { height: 14px; animation-delay: 0s; }
+.wave-bar:nth-child(2) { height: 26px; animation-delay: 0.1s; }
+.wave-bar:nth-child(3) { height: 38px; animation-delay: 0.2s; }
+.wave-bar:nth-child(4) { height: 22px; animation-delay: 0.3s; }
+.wave-bar:nth-child(5) { height: 30px; animation-delay: 0.15s; }
+.wave-bar:nth-child(6) { height: 16px; animation-delay: 0.25s; }
+.wave-bar:nth-child(7) { height: 24px; animation-delay: 0.05s; }
+@keyframes wave {
+  0%, 100% { transform: scaleY(0.3); opacity: 0.5; }
+  50% { transform: scaleY(1); opacity: 1; }
+}
+.tts-controls {
+  margin-top: auto;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.tts-mic {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: var(--celadon);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  box-shadow: 0 6px 20px rgba(74, 111, 165, 0.4);
+}
+.tts-side-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+/* Style preview gradients used as recommendations */
+.bg-gangneung { background: linear-gradient(135deg, #6B89B5 0%, #4A6FA5 50%, #2E4E7F 100%); }
+.bg-tongyeong { background: linear-gradient(135deg, #88B098 0%, #4A6FA5 60%, #2E4E7F 100%); }
+.bg-jeju-s { background: linear-gradient(135deg, #5F8B6E 0%, #88B098 50%, #E8B860 100%); }
+.bg-geoje { background: linear-gradient(135deg, #4A6FA5 0%, #6B89B5 50%, #88B098 100%); }
+.bg-poi-1 { background: linear-gradient(135deg, #88A5D4 0%, #4A6FA5 100%); }
+.bg-poi-2 { background: linear-gradient(135deg, #E8B860 0%, #C24A36 100%); }
+.bg-poi-3 { background: linear-gradient(135deg, #5F8B6E 0%, #88B098 100%); }
+.bg-poi-4 { background: linear-gradient(135deg, #4A6FA5 0%, #88B098 100%); }
+.bg-poi-5 { background: linear-gradient(135deg, #C24A36 0%, #E8B860 60%, #88A5D4 100%); }
+
+/* Caption */
+.caption {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 320px;
+  line-height: 1.6;
+}
+.caption strong {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 500;
+  color: var(--text);
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+/* Tokens */
+.tokens {
+  background: var(--bg-elev);
+  border-radius: 24px;
+  padding: 40px 36px;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-md);
+  margin-top: 72px;
+}
+.tokens h2 {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 500;
+  font-size: 26px;
+  margin: 0 0 32px;
+  letter-spacing: -0.01em;
+}
+.tokens-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 40px;
+}
+.token-section h3 {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 16px;
+}
+.swatch-list { display: flex; flex-direction: column; gap: 8px; }
+.swatch {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+.swatch-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+}
+.swatch-meta { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.swatch-name { font-size: 13px; font-weight: 500; }
+.swatch-hex { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-soft); }
+.type-specimen { display: flex; flex-direction: column; gap: 16px; }
+.specimen-row { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.specimen-label {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  margin-bottom: 6px;
+}
+.specimen-fraunces { font-family: 'Fraunces', serif; font-size: 30px; letter-spacing: -0.02em; font-style: italic; font-weight: 500; }
+.specimen-noto { font-family: 'Noto Serif KR', serif; font-size: 22px; font-weight: 500; line-height: 1.35; }
+.specimen-pretendard { font-family: 'Pretendard Variable', Pretendard, sans-serif; font-size: 16px; }
+.specimen-mono { font-family: 'DM Mono', monospace; font-size: 14px; font-feature-settings: "tnum"; }
+
+.notes {
+  margin-top: 48px;
+  padding: 32px;
+  border-radius: 16px;
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+}
+.notes h3 {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 500;
+  font-size: 18px;
+  margin: 0 0 16px;
+}
+.notes ul {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.8;
+}
+.notes ul li strong { color: var(--text); font-weight: 500; font-family: 'Noto Serif KR', serif; }
+
+/* Logo board */
+.logo-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 28px;
+  margin-bottom: 16px;
+}
+.logo-card {
+  background: var(--bg-elev);
+  border-radius: 20px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.logo-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+.logo-letter {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--celadon);
+  letter-spacing: 0.08em;
+}
+.logo-title {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 15px;
+  font-weight: 500;
+}
+.logo-canvas-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.logo-canvas {
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+}
+.logo-canvas.light {
+  background: #F5EFE3;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence baseFrequency='0.9' numOctaves='2' seed='5'/><feColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.35 0 0 0 0 0.28 0 0 0 0.06 0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
+}
+.logo-canvas.dark {
+  background: #1A1F2A;
+}
+.logo-canvas svg { width: 65%; height: 65%; }
+.logo-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* Wordmark board */
+.wordmark-board {
+  background: var(--bg-elev);
+  border-radius: 20px;
+  padding: 36px 32px;
+  border: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 16px;
+}
+.wordmark-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 32px 20px;
+  background: #F5EFE3;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence baseFrequency='0.9' numOctaves='2' seed='5'/><feColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.35 0 0 0 0 0.28 0 0 0 0.06 0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
+  border-radius: 14px;
+  border: 1px solid var(--line);
+}
+.wordmark-lockup {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.wordmark-mark {
+  width: 44px;
+  height: 36px;
+  flex-shrink: 0;
+  color: #4A6FA5;
+}
+.wordmark-mark svg { width: 100%; height: 100%; }
+.wordmark-ko {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 600;
+  font-size: 38px;
+  letter-spacing: -0.03em;
+  color: #1F1F1F;
+  line-height: 1;
+}
+.wordmark-stack { display: flex; flex-direction: column; gap: 2px; }
+.wordmark-latin {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 13px;
+  color: #4A6FA5;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.wordmark-meaning {
+  font-size: 12px;
+  color: #6B6258;
+  text-align: center;
+  font-family: 'Pretendard Variable', sans-serif;
+  max-width: 220px;
+  line-height: 1.6;
+  margin-top: 4px;
+}
+.wordmark-meaning strong {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 500;
+  color: #1F1F1F;
+}
+
+/* Onboarding */
+.onboard-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 32px 24px;
+  text-align: center;
+  background: linear-gradient(180deg, var(--bg-elev) 0%, rgba(74,111,165,0.06) 100%);
+}
+.onboard-mark { margin-bottom: 36px; }
+.onboard-heading {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 500;
+  font-size: 26px;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+  margin: 0 0 14px;
+}
+.onboard-heading em { font-style: italic; color: var(--celadon); }
+.onboard-body {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.65;
+  max-width: 260px;
+  margin: 0 0 40px;
+}
+.onboard-cta {
+  width: 100%;
+  max-width: 260px;
+  background: var(--celadon);
+  color: #fff;
+  padding: 15px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 500;
+  text-align: center;
+  margin-bottom: 16px;
+  font-family: 'Pretendard Variable', sans-serif;
+}
+.onboard-link {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: 'Pretendard Variable', sans-serif;
+}
+
+/* Onboarding entrance animations (stagger + 호흡 + CTA pulse) */
+@keyframes mark-enter {
+  0%   { opacity: 0; transform: scale(0.7); }
+  60%  { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes fade-up {
+  0%   { opacity: 0; transform: translateY(14px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes cta-soft-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(74, 111, 165, 0); }
+  50%      { box-shadow: 0 0 0 10px rgba(74, 111, 165, 0.10); }
+}
+
+/* Onboarding 화면에서만 적용 (다른 화면의 companion에는 영향 X) */
+.onboard-screen .companion.lg {
+  animation:
+    mark-enter 1.0s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both,
+    breathe-lg 3s ease-in-out 1.4s infinite;
+}
+.onboard-heading { animation: fade-up 0.8s ease-out 0.8s both; }
+.onboard-body    { animation: fade-up 0.7s ease-out 1.2s both; }
+.onboard-cta {
+  animation:
+    fade-up 0.7s ease-out 1.5s both,
+    cta-soft-pulse 3.2s ease-in-out 2.5s infinite;
+}
+.onboard-link    { animation: fade-up 0.6s ease-out 1.8s both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .onboard-screen .companion.lg,
+  .onboard-heading,
+  .onboard-body,
+  .onboard-cta,
+  .onboard-link {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .onboard-screen .companion.lg {
+    animation: breathe-lg 3s ease-in-out infinite;
+  }
+}
+
+/* Home */
+.home-meta { font-size: 11px; color: var(--text-soft); margin-bottom: 8px; font-family: 'DM Mono', monospace; }
+.home-heading {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+  margin: 4px 0 24px;
+}
+.home-heading em { font-style: italic; color: var(--celadon); }
+
+.next-trip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: var(--celadon-tint);
+  border-radius: 14px;
+  border: 1px solid var(--celadon-soft);
+  margin-bottom: 16px;
+}
+.next-trip-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #E8B860 0%, #C24A36 80%);
+  flex-shrink: 0;
+}
+.next-trip-info { flex: 1; min-width: 0; }
+.next-trip-name { font-family: 'Noto Serif KR', serif; font-size: 15px; font-weight: 500; }
+.next-trip-meta { font-size: 11px; color: var(--celadon); font-family: 'DM Mono', monospace; margin-top: 2px; }
+.next-trip-count {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 24px;
+  color: var(--celadon);
+  font-feature-settings: "tnum";
+}
+.next-trip-count small { font-size: 11px; font-family: 'DM Mono', monospace; font-style: normal; opacity: 0.7; }
+
+.quick-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.quick-action {
+  padding: 14px;
+  background: var(--bg);
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 84px;
+}
+.quick-dot-row { display: flex; align-items: center; gap: 4px; }
+.qd {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--celadon);
+  opacity: 0.85;
+}
+.qd.sm { width: 6px; opacity: 0.55; }
+.qd.lg { width: 14px; opacity: 1; }
+.qd.juhong { background: var(--juhong); }
+.qd.moss { background: var(--moss); }
+.qd.amber { background: var(--amber); }
+.quick-label {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 14px;
+  font-weight: 500;
+}
+.quick-desc { font-size: 10px; color: var(--text-soft); line-height: 1.5; }
+
+.ambient {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  background: var(--bg);
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  margin-top: 8px;
+}
+.ambient .companion { margin-top: 2px; }
+.ambient-text {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+  flex: 1;
+}
+.ambient-text em { color: var(--celadon); font-style: italic; }
+
+/* Letter itinerary */
+.letter-header {
+  margin: 14px 0 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.letter-place {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 19px;
+  font-weight: 500;
+  margin: 0 0 4px;
+  letter-spacing: -0.02em;
+}
+.letter-meta { font-size: 11px; color: var(--text-soft); font-family: 'DM Mono', monospace; }
+
+.day-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.day-tab {
+  flex: 1;
+  padding: 8px 6px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+}
+.day-tab.active {
+  background: var(--celadon);
+  color: #fff;
+  border-color: var(--celadon);
+}
+.day-tab .num { font-family: 'Fraunces', serif; font-style: italic; font-size: 10px; display: block; opacity: 0.75; margin-bottom: 2px; }
+
+.ink-timeline {
+  position: relative;
+  height: 40px;
+  margin: 0 0 16px;
+  padding: 0 4px;
+}
+.ink-track {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 50%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(74,111,165,0.3) 20%, rgba(74,111,165,0.3) 80%, transparent 100%);
+}
+.ink-points {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+}
+.ink-pt {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--celadon);
+  opacity: 0.55;
+  z-index: 1;
+}
+.ink-pt.current {
+  width: 14px;
+  height: 14px;
+  opacity: 1;
+  box-shadow: 0 0 0 5px rgba(74,111,165,0.18);
+  animation: breathe 3s ease-in-out infinite;
+}
+.ink-pt.past { opacity: 0.3; width: 5px; height: 5px; }
+.timeline-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 9px;
+  font-family: 'DM Mono', monospace;
+  color: var(--text-soft);
+  letter-spacing: 0.04em;
+  padding: 0 2px;
+}
+
+.letter-body {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 15px;
+  line-height: 1.9;
+  color: var(--text);
+  letter-spacing: -0.005em;
+}
+.letter-body p { margin: 0 0 18px; }
+.letter-body .place {
+  color: var(--celadon);
+  font-weight: 500;
+  border-bottom: 1px dotted var(--celadon-soft);
+  padding-bottom: 1px;
+}
+.letter-body .t {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-soft);
+  letter-spacing: 0.02em;
+  margin: 0 2px;
+  vertical-align: 0.1em;
+}
+.letter-body em {
+  font-style: italic;
+  color: var(--celadon);
+  font-weight: 500;
+}
+.letter-sign {
+  margin-top: 28px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  text-align: right;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  color: var(--celadon);
+  font-size: 14px;
+}
+.letter-reply {
+  margin-top: 20px;
+  background: var(--celadon-tint);
+  border: 1px dashed var(--celadon-soft);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 12px;
+  color: var(--celadon);
+  text-align: center;
+  font-family: 'Noto Serif KR', serif;
+}
+
+/* Profile */
+.profile-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0 14px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 18px;
+}
+.profile-mark {
+  width: 56px;
+  height: 56px;
+  margin-bottom: 12px;
+  color: var(--celadon);
+  position: relative;
+}
+.profile-mark svg { width: 100%; height: 100%; }
+.profile-mark::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(74,111,165,0.18) 0%, transparent 70%);
+  animation: breathe 4s ease-in-out infinite;
+}
+.profile-name {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 22px;
+  font-weight: 500;
+  margin: 0 0 4px;
+  letter-spacing: -0.02em;
+}
+.profile-since { font-size: 10px; color: var(--text-soft); font-family: 'DM Mono', monospace; letter-spacing: 0.04em; }
+
+.stat-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.stat {
+  text-align: center;
+  padding: 14px 6px;
+  background: var(--bg);
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+.stat-num {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--celadon);
+  line-height: 1;
+  display: block;
+  font-feature-settings: "tnum";
+}
+.stat-label {
+  font-size: 9px;
+  color: var(--text-soft);
+  letter-spacing: 0.08em;
+  margin-top: 6px;
+  text-transform: uppercase;
+  font-family: 'Pretendard Variable', sans-serif;
+}
+
+.profile-section { margin-bottom: 16px; }
+.profile-section-label {
+  font-size: 10px;
+  color: var(--text-soft);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  font-family: 'Pretendard Variable', sans-serif;
+}
+.profile-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.profile-tags .tag { font-size: 11px; padding: 5px 10px; }
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.setting-row:last-child { border-bottom: 0; }
+.setting-key { font-size: 13px; font-family: 'Pretendard Variable', sans-serif; }
+.setting-val {
+  font-size: 12px;
+  color: var(--celadon);
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 500;
+}
+
+footer {
+  margin-top: 48px;
+  font-size: 12px;
+  color: var(--text-soft);
+  text-align: center;
+  font-family: 'DM Mono', monospace;
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="ink-mark" viewBox="0 0 28 28">
+      <ellipse cx="14" cy="14" rx="9" ry="8.5" fill="currentColor" opacity="0.85"/>
+      <ellipse cx="11" cy="11.5" rx="3" ry="2.5" fill="currentColor" opacity="0.4"/>
+      <circle cx="17.5" cy="16.5" r="1.5" fill="currentColor" opacity="0.6"/>
+    </symbol>
+
+    <!-- 라인 아이콘 (단청 청자 톤, 1.5px stroke, currentColor) -->
+    <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="9" y="3" width="6" height="12" rx="3"/>
+      <path d="M5 11v1a7 7 0 0 0 14 0v-1"/>
+      <line x1="12" y1="19" x2="12" y2="22"/>
+      <line x1="9" y1="22" x2="15" y2="22"/>
+    </symbol>
+
+    <symbol id="i-scroll" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="4" y="3" width="16" height="18" rx="1.5"/>
+      <line x1="8" y1="8" x2="16" y2="8"/>
+      <line x1="8" y1="12" x2="16" y2="12"/>
+      <line x1="8" y1="16" x2="13" y2="16"/>
+    </symbol>
+
+    <symbol id="i-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z"/>
+      <circle cx="12" cy="9" r="2.5"/>
+    </symbol>
+
+    <symbol id="i-coffee" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 9h13v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/>
+      <path d="M17 11h2a2 2 0 1 1 0 4h-2"/>
+      <line x1="7" y1="2.5" x2="7" y2="5"/>
+      <line x1="11" y1="2.5" x2="11" y2="5"/>
+      <line x1="15" y1="2.5" x2="15" y2="5"/>
+    </symbol>
+
+    <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 4h7v17H6a2 2 0 0 1-2-2z"/>
+      <path d="M20 4h-7v15a2 2 0 0 1 2-2h5z"/>
+    </symbol>
+
+    <symbol id="i-flight" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 12 21 4l-7 17-3-8z"/>
+      <line x1="11" y1="13" x2="21" y2="4"/>
+    </symbol>
+
+    <symbol id="i-bed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 18v-8a3 3 0 0 1 3-3h7v8h8v3"/>
+      <line x1="3" y1="15" x2="21" y2="15"/>
+      <circle cx="7.5" cy="11.5" r="1.5" fill="currentColor"/>
+    </symbol>
+
+    <symbol id="i-wave" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2 11c2 0 3-2 5-2s3 2 5 2 3-2 5-2 3 2 5 2"/>
+      <path d="M2 16c2 0 3-2 5-2s3 2 5 2 3-2 5-2 3 2 5 2" opacity="0.55"/>
+    </symbol>
+
+    <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 3 22 20H2z"/>
+      <line x1="12" y1="10" x2="12" y2="14"/>
+      <circle cx="12" cy="17" r="0.8" fill="currentColor" stroke="none"/>
+    </symbol>
+
+    <symbol id="i-keyboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="6" width="18" height="12" rx="2"/>
+      <line x1="6" y1="10" x2="6.01" y2="10"/>
+      <line x1="10" y1="10" x2="10.01" y2="10"/>
+      <line x1="14" y1="10" x2="14.01" y2="10"/>
+      <line x1="18" y1="10" x2="18.01" y2="10"/>
+      <line x1="7" y1="14" x2="17" y2="14"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="page">
+
+<header class="brand">
+  <div class="brand-title">동행 <em>Donghaeng</em> · 디자인 시스템</div>
+  <div class="brand-meta">
+    <span>v0.3 프리뷰</span>
+    <button class="theme-toggle" onclick="toggleTheme()">다크 모드</button>
+  </div>
+</header>
+
+<section class="hero">
+  <h1>혼자지만, <span class="accent">옆에 있는 친구</span><br/>그 리듬으로 짜는 여행.</h1>
+  <p>일상의 셸(온보딩·홈·프로필) + 짜는 단계(01-04) + <strong style="color:var(--celadon)">편지처럼 읽는 일정</strong> + 떠나는·머무는 단계(05-07). 같은 시스템이 11개 화면에서 다른 일을 합니다. 일정은 시간표가 아니라 친구가 쓴 편지.</p>
+</section>
+
+<div class="section-label">Shell · 일상의 자리</div>
+<main class="board">
+
+  <!-- A. Onboarding -->
+  <div class="phone">
+    <div class="phone-num">SHELL A</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="status-bar"><span>9:00</span><span class="icons">●●● ▮ 100</span></div>
+        <div class="onboard-screen">
+          <span class="companion lg onboard-mark" style="color:var(--celadon)"><svg><use href="#ink-mark"/></svg></span>
+          <h1 class="onboard-heading">처음 만나는 자리.<br/><em>옆에서, 같이 가요.</em></h1>
+          <p class="onboard-body">동행은 윤서님 옆에서 같이 여행을 짜고, 또 같이 다닐 거예요. 시작해볼까요?</p>
+          <div class="onboard-cta">시작하기</div>
+          <div class="onboard-link">이미 계정이 있어요</div>
+        </div>
+      </div>
+    </div>
+    <p class="caption"><strong>A · 첫 만남 (Onboarding)</strong>탭바·헤더 없음. 잉크 마크 하나 + 한 문장 + 한 버튼. 첫 3초가 영원하길.<br/><em style="color:var(--celadon)">화면 탭하면 entrance 애니메이션 다시 재생.</em></p>
+  </div>
+
+  <!-- B. Home -->
+  <div class="phone">
+    <div class="phone-num">SHELL B</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="status-bar"><span>9:24</span><span class="icons">●●● ▮ 92</span></div>
+        <div class="screen-content">
+          <div class="greet" style="margin-top:14px">
+            <span class="companion" style="color:var(--celadon)"><svg><use href="#ink-mark"/></svg></span>
+            <span class="greet-name" style="font-size:14px; color:var(--text-muted)">윤서님</span>
+          </div>
+          <div class="home-meta">화요일 · 5월 12일 · 흐림 18°</div>
+          <h1 class="home-heading">오늘은 <em>어떻게</em><br/>보내고 싶으세요?</h1>
+
+          <div class="next-trip">
+            <div class="next-trip-img"></div>
+            <div class="next-trip-info">
+              <div class="next-trip-name">부산 · 2박 3일</div>
+              <div class="next-trip-meta">5/24 출발 · KE 1837</div>
+            </div>
+            <div class="next-trip-count">12<small>일 후</small></div>
+          </div>
+
+          <div class="quick-grid">
+            <div class="quick-action">
+              <div class="quick-dot-row"><div class="qd lg"></div><div class="qd sm"></div></div>
+              <div class="quick-label">새로 짜기</div>
+              <div class="quick-desc">처음부터 동행과 함께</div>
+            </div>
+            <div class="quick-action">
+              <div class="quick-dot-row"><div class="qd"></div><div class="qd"></div><div class="qd sm"></div></div>
+              <div class="quick-label">지난 여행</div>
+              <div class="quick-desc">12번의 동행</div>
+            </div>
+            <div class="quick-action">
+              <div class="quick-dot-row"><div class="qd moss"></div><div class="qd amber"></div></div>
+              <div class="quick-label">내 패턴</div>
+              <div class="quick-desc">어디를 좋아하셨는지</div>
+            </div>
+            <div class="quick-action">
+              <div class="quick-dot-row"><div class="qd lg juhong"></div></div>
+              <div class="quick-label">지금 떠나기</div>
+              <div class="quick-desc">당일치기 · 즉시 제안</div>
+            </div>
+          </div>
+
+          <div class="ambient">
+            <span class="companion" style="color:var(--celadon)"><svg><use href="#ink-mark"/></svg></span>
+            <div class="ambient-text">어제 강릉 정리해뒀어요. <em>한 번 봐주세요.</em></div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab active"><div class="tab-dot"></div>홈</div>
+          <div class="tab"><div class="tab-dot"></div>여행</div>
+          <div class="tab"><div class="tab-dot"></div>대화</div>
+          <div class="tab"><div class="tab-dot"></div>나</div>
+        </div>
+      </div>
+    </div>
+    <p class="caption"><strong>B · 홈 (Home)</strong>인사 + 한 문장 질문이 화면의 절반. 빠른 액션 4개는 잉크 점 배치로 표현 — 메뉴가 아니라 *몸짓*. ambient에 컴패니언의 작은 알림.</p>
+  </div>
+
+  <!-- C. Profile -->
+  <div class="phone">
+    <div class="phone-num">SHELL C</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="status-bar"><span>21:08</span><span class="icons">●●● ▮ 38</span></div>
+        <div class="screen-content">
+          <div class="profile-hero">
+            <span class="profile-mark"><svg><use href="#ink-mark"/></svg></span>
+            <h1 class="profile-name">윤서</h1>
+            <div class="profile-since">동행과 함께한 지 2년 4개월</div>
+          </div>
+
+          <div class="stat-row">
+            <div class="stat"><span class="stat-num">12</span><div class="stat-label">Trips</div></div>
+            <div class="stat"><span class="stat-num">47</span><div class="stat-label">Days</div></div>
+            <div class="stat"><span class="stat-num">8</span><div class="stat-label">Cities</div></div>
+          </div>
+
+          <div class="profile-section">
+            <div class="profile-section-label">나의 여행 결</div>
+            <div class="profile-tags">
+              <div class="tag on">혼자가 좋아요</div>
+              <div class="tag on">자연 &gt; 도시</div>
+              <div class="tag on">사진 많이</div>
+              <div class="tag on">맛집은 꼭</div>
+              <div class="tag on">계획 느슨하게</div>
+            </div>
+          </div>
+
+          <div class="profile-section">
+            <div class="profile-section-label">동행 설정</div>
+            <div class="setting-row">
+              <span class="setting-key">동행의 이름</span>
+              <span class="setting-val">아직 없어요</span>
+            </div>
+            <div class="setting-row">
+              <span class="setting-key">대화 톤</span>
+              <span class="setting-val">친근한 존댓말</span>
+            </div>
+            <div class="setting-row">
+              <span class="setting-key">알림 빈도</span>
+              <span class="setting-val">조용히</span>
+            </div>
+            <div class="setting-row">
+              <span class="setting-key">목소리 (TTS)</span>
+              <span class="setting-val">차분한 여성</span>
+            </div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab"><div class="tab-dot"></div>홈</div>
+          <div class="tab"><div class="tab-dot"></div>여행</div>
+          <div class="tab"><div class="tab-dot"></div>대화</div>
+          <div class="tab active"><div class="tab-dot"></div>나</div>
+        </div>
+      </div>
+    </div>
+    <p class="caption"><strong>C · 프로필 (나의 자리)</strong>3개 숫자 stat은 Fraunces로. 사용자가 *동행에게 이름을 줄 수 있는* 설정 — 친구 관계의 마지막 한 수.</p>
+  </div>
+
+</main>
+
+<div class="section-label">Flow 1–4 · 짜는 단계</div>
+<main class="board">
+
+  <!-- 1. 사용자 분석 (스타일 태그 + 자유 prompt) -->
+  <div class="phone">
+    <div class="phone-num">SCENARIO 01</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="status-bar"><span>9:24</span><span class="icons">●●● ▮ 88</span></div>
+        <div class="screen-content">
+          <div class="greet">
+            <span class="companion" style="color:var(--celadon)"><svg><use href="#ink-mark"/></svg></span>
+            <span class="greet-name">윤서님은,</span>
+          </div>
+          <div class="greet-meta">처음 만나는 거니까 조금만 여쭤볼게요</div>
+          <p class="voice"><em>어떤 결</em>의 여행이 좋으세요?<br/>고르거나, 직접 적어주세요.</p>
+          <div class="tag-grid">
+            <div class="tag on"><span class="check">✓</span>혼자가 좋아요</div>
+            <div class="tag on"><span class="check">✓</span>사진 많이</div>
+            <div class="tag">계획 느슨하게</div>
+            <div class="tag on"><span class="check">✓</span>맛집은 꼭</div>
+            <div class="tag">야경/야간</div>
+            <div class="tag on"><span class="check">✓</span>자연 &gt; 도시</div>
+            <div class="tag">체력 좋아요</div>
+            <div class="tag">현지인처럼</div>
+          </div>
+          <div class="prompt-input">
+            <span class="ph">또는 직접 — "조용한 어촌 마을…"</span>
+            <span class="send">↑</span>
+          </div>
+          <div class="cta-bottom">이걸로 시작해요</div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab"><div class="tab-dot"></div>홈</div>
+          <div class="tab active"><div class="tab-dot"></div>여행</div>
+          <div class="tab"><div class="tab-dot"></div>대화</div>
+          <div class="tab"><div class="tab-dot"></div>나</div>
+        </div>
+      </div>
+    </div>
+    <p class="caption"><strong>01 · 사용자 분석</strong>태그 + 자유 prompt 하이브리드. 답이 없다고 말해주는 게 친구의 첫인사.</p>
+  </div>
+
+  <!-- 2. 여행지 추천 -->
+  <div class="phone">
+    <div class="phone-num">SCENARIO 02</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="status-bar"><span>9:26</span><span class="icons">●●● ▮ 87</span></div>
+        <div class="screen-content">
+          <div class="greet">
+            <span class="companion" style="color:var(--celadon)"><svg><use href="#ink-mark"/></svg></span>
+            <span class="greet-name">네 곳 골라봤어요</span>
+          </div>
+          <p class="voice sm">윤서님같은 분에게 어울릴 거예요.<br/><em>비슷한 결, 다른 결</em>로 섞었어요.</p>
+          <div class="rec-card">
+            <div class="rec-thumb bg-gangneung"></div>
+            <div class="rec-info">
+              <h3 class="rec-name">강릉</h3>
+              <div class="rec-reason">혼자 바다 보는 시간 · 카페 거리</div>
+            </div>
+            <div class="rec-match">94<span class="pct">%</span></div>
+          </div>
+          <div class="rec-card">
+            <div class="rec-thumb bg-tongyeong"></div>
+            <div class="rec-info">
+              <h3 class="rec-name">통영</h3>
+              <div class="rec-reason">골목과 빵, 그리고 작은 항구</div>
+            </div>
+            <div class="rec-match">89<span class="pct">%</span></div>
+          </div>
+          <div class="rec-card">
+            <div class="rec-thumb bg-jeju-s"></div>
+            <div class="rec-info">
+              <h3 class="rec-name">제주 남부</h3>
+              <div class="rec-reason">오름을 천천히 · 사진 좋아요</div>
+            </div>
+            <div class="rec-match">87<span class="pct">%</span></div>
+          </div>
+          <div class="rec-card">
+            <div class="rec-thumb bg-geoje"></div>
+            <div class="rec-info">
+              <h3 class="rec-name">거제</h3>
+              <div class="rec-reason">조용한 어촌 · 풍경 위주</div>
+            </div>
+            <div class="rec-match">82<span class="pct">%</span></div>
+          </div>
+          <div class="prompt-input" style="margin-top:14px">
+            <span class="ph">"더 작은 도시…"</span>
+            <span class="send">↑</span>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab"><div class="tab-dot"></div>홈</div>
+          <div class="tab active"><div class="tab-dot"></div>여행</div>
+          <div class="tab"><div class="tab-dot"></div>대화</div>
+          <div class="tab"><div class="tab-dot"></div>나</div>
+        </div>
+      </div>
+    </div>
+    <p class="caption"><strong>02 · 여행지 추천</strong>매칭 점수는 Fraunces 이탤릭으로. 숫자도 "사람이 골라줬다" 느낌.</p>
+  </div>
+
+  <!-- 3. POI 리스트 (좋아요/스킵 + prompt 피드백) -->
+  <div class="phone">
+    <div class="phone-num">SCENARIO 03</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="status-bar"><span>9:31</span><span class="icons">●●● ▮ 86</span></div>
+        <div class="screen-content">
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin:18px 0 4px">
+            <div style="font-family:'Noto Serif KR',serif; font-size:18px; font-weight:500">강릉 · 2박 3일</div>
+            <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--text-soft)">12 / 23</div>
+          </div>
+          <p class="voice sm">이 안에서 가볼 만한 곳들이에요. <em>안 끌리면 옆으로</em> 밀어요.</p>
+          <div class="poi-row">
+            <div class="poi-thumb bg-poi-1"></div>
+            <div class="poi-info">
+              <div class="poi-name">안목 해변 커피거리</div>
+              <div class="poi-meta">카페 · 오션뷰</div>
+            </div>
+            <div class="poi-actions">
+              <div class="poi-btn like">♥</div>
+              <div class="poi-btn skip">×</div>
+            </div>
+          </div>
+          <div class="poi-row">
+            <div class="poi-thumb bg-poi-2"></div>
+            <div class="poi-info">
+              <div class="poi-name">정동진 일출</div>
+              <div class="poi-meta">새벽 · 5:42 일출</div>
+            </div>
+            <div class="poi-actions">
+              <div class="poi-btn like">♥</div>
+              <div class="poi-btn skip">×</div>
+            </div>
+          </div>
+          <div class="poi-row">
+            <div class="poi-thumb bg-poi-3"></div>
+            <div class="poi-info">
+              <div class="poi-name">사천진리 책방</div>
+              <div class="poi-meta">독립서점 · 조용</div>
+            </div>
+            <div class="poi-actions">
+              <div class="poi-btn like">♥</div>
+              <div class="poi-btn skip">×</div>
+            </div>
+          </div>
+          <div class="poi-row">
+            <div class="poi-thumb bg-poi-4"></div>
+            <div class="poi-info">
+              <div class="poi-name">경포대</div>
+              <div class="poi-meta">호수 산책</div>
+            </div>
+            <div class="poi-actions">
+              <div class="poi-btn like">♥</div>
+              <div class="poi-btn skip">×</div>
+            </div>
+          </div>
+          <div class="poi-row">
+            <div class="poi-thumb bg-poi-5"></div>
+            <div class="poi-info">
+              <div class="poi-name">강릉 중앙시장</div>
+              <div class="poi-meta">먹거리 · 늦은 점심</div>
+            </div>
+            <div class="poi-actions">
+              <div class="poi-btn like">♥</div>
+              <div class="poi-btn skip">×</div>
+            </div>
+          </div>
+          <div class="prompt-input" style="margin-top:14px">
+            <span class="ph">"더 한적한 카페만…"</span>
+            <span class="send">↑</span>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab"><div class="tab-dot"></div>홈</div>
+          <div class="tab active"><div class="tab-dot"></div>여행</div>
+          <div class="tab"><div class="tab-dot"></div>대화</div>
+          <div class="tab"><div class="tab-dot"></div>나</div>
+        </div>
+      </div>
+    </div>
+    <p class="caption"><strong>03 · POI 리스트</strong>좋아요/스킵 한 번에. prompt로 결 바꾸기. 큐레이션을 사용자가 함께 잡아감.</p>
+  </div>
+
+  <!-- 4. 동선 (3 versions) -->
+  <div class="phone">
+    <div class="phone-num">SCENARIO 04</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="status-bar"><span>9:38</span><span class="icons">●●● ▮ 84</span></div>
+        <div class="screen-content">
+          <div class="greet">
+            <span class="companion" style="color:var(--celadon)"><svg><use href="#ink-mark"/></svg></span>
+            <span class="greet-name">동선 세 갈래</span>
+          </div>
+          <p class="voice sm">선택지마다 <em>리듬이 달라요</em>. 어느 결이 끌려요?</p>
+          <div class="route-card selected">
+            <div class="route-head">
+              <div class="route-name">바다 따라</div>
+              <div class="route-letter">Plan A</div>
+            </div>
+            <div class="route-map a"></div>
+            <div class="route-stats">
+              <span><span class="num">4h</span> 이동</span>
+              <span><span class="num">9</span> stops</span>
+              <span><span class="num">−</span> 차분함 ★★★</span>
+            </div>
+          </div>
+          <div class="route-card">
+            <div class="route-head">
+              <div class="route-name">빵집 도장깨기</div>
+              <div class="route-letter">Plan B</div>
+            </div>
+            <div class="route-map b"></div>
+            <div class="route-stats">
+              <span><span class="num">3h</span> 이동</span>
+              <span><span class="num">7</span> stops</span>
+              <span><span class="num">−</span> 들뜸 ★★★</span>
+            </div>
+          </div>
+          <div class="route-card">
+            <div class="route-head">
+              <div class="route-name">한 곳 깊게</div>
+              <div class="route-letter">Plan C</div>
+            </div>
+            <div class="route-map c"></div>
+            <div class="route-stats">
+              <span><span class="num">2h</span> 이동</span>
+              <span><span class="num">4</span> stops</span>
+              <span><span class="num">−</span> 침잠 ★★★★</span>
+            </div>
+          </div>
+          <div class="cta-bottom">A로 갈래요</div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab"><div class="tab-dot"></div>홈</div>
+          <div class="tab active"><div class="tab-dot"></div>여행</div>
+          <div class="tab"><div class="tab-dot"></div>대화</div>
+          <div class="tab"><div class="tab-dot"></div>나</div>
+        </div>
+      </div>
+    </div>
+    <p class="caption"><strong>04 · 동선 추천</strong>총 시간/스톱 수가 아니라 *리듬*을 보여줌. 미니맵은 색만으로 무드 차이 전달.</p>
+  </div>
+
+</main>
+
+<div class="section-label">★ v1 핵심 화면 · 간단 일정 시작 + 현장 컴패니언</div>
+<main class="board">
+
+  <!-- ★ 간단 일정 시작 (v1 NEW) -->
+  <svg width="0" height="0" style="position:absolute">
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="7"/>
+      <line x1="16" y1="16" x2="21" y2="21"/>
+    </symbol>
+  </svg>
+  <div class="phone">
+    <div class="phone-num">★ v1 · TRIP START</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="status-bar"><span>9:24</span><span class="icons">●●● ▮ 92</span></div>
+        <div class="screen-content" style="padding:14px 20px 16px">
+
+          <!-- Header -->
+          <div style="display:flex; align-items:center; gap:10px; margin:8px 0 18px">
+            <span class="companion" style="color:var(--celadon)"><svg><use href="#ink-mark"/></svg></span>
+            <div style="font-family:'Noto Serif KR',serif; font-size:14px; font-weight:500; color:var(--text-muted)">윤서님,</div>
+          </div>
+
+          <!-- Heading -->
+          <h2 style="font-family:'Noto Serif KR',serif; font-size:22px; font-weight:500; line-height:1.35; letter-spacing:-0.02em; margin:0 0 6px">
+            어디로 <em style="color:var(--celadon); font-style:italic">가실래요</em>?
+          </h2>
+          <div style="font-family:'Pretendard Variable',sans-serif; font-size:12px; color:var(--text-soft); margin-bottom:18px">도시 이름을 적거나, 분위기로 골라요</div>
+
+          <!-- Search input -->
+          <div style="display:flex; align-items:center; gap:10px; padding:13px 14px; background:var(--bg); border:1px solid var(--line-strong); border-radius:14px; margin-bottom:22px">
+            <svg viewBox="0 0 24 24" style="width:18px;height:18px;color:var(--text-soft);flex-shrink:0"><use href="#i-search"/></svg>
+            <span style="font-family:'Pretendard Variable',sans-serif; font-size:14px; color:var(--text-soft); flex:1">강릉, 부산, 제주...</span>
+          </div>
+
+          <!-- Section: 인기 도시 -->
+          <div style="font-family:'Pretendard Variable',sans-serif; font-size:11px; color:var(--text-muted); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:10px">인기 도시</div>
+          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:22px">
+            <div class="tag on">강릉</div>
+            <div class="tag">부산</div>
+            <div class="tag">제주</div>
+            <div class="tag">통영</div>
+            <div class="tag">속초</div>
+            <div class="tag">여수</div>
+            <div class="tag">경주</div>
+            <div class="tag">전주</div>
+          </div>
+
+          <!-- Section: 분위기로 -->
+          <div style="font-family:'Pretendard Variable',sans-serif; font-size:11px; color:var(--text-muted); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:10px">분위기로</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:18px">
+            <div style="padding:12px 14px; background:var(--bg); border:1px solid var(--line); border-radius:12px">
+              <div style="font-family:'Noto Serif KR',serif; font-size:14px; font-weight:500">바다 보러</div>
+              <div style="font-family:'Pretendard Variable',sans-serif; font-size:11px; color:var(--text-soft); margin-top:2px">강릉·여수·통영</div>
+            </div>
+            <div style="padding:12px 14px; background:var(--bg); border:1px solid var(--line); border-radius:12px">
+              <div style="font-family:'Noto Serif KR',serif; font-size:14px; font-weight:500">산·자연</div>
+              <div style="font-family:'Pretendard Variable',sans-serif; font-size:11px; color:var(--text-soft); margin-top:2px">설악·지리·한라</div>
+            </div>
+            <div style="padding:12px 14px; background:var(--bg); border:1px solid var(--line); border-radius:12px">
+              <div style="font-family:'Noto Serif KR',serif; font-size:14px; font-weight:500">도시 골목</div>
+              <div style="font-family:'Pretendard Variable',sans-serif; font-size:11px; color:var(--text-soft); margin-top:2px">부산·전주·서울</div>
+            </div>
+            <div style="padding:12px 14px; background:var(--bg); border:1px solid var(--line); border-radius:12px">
+              <div style="font-family:'Noto Serif KR',serif; font-size:14px; font-weight:500">조용히</div>
+              <div style="font-family:'Pretendard Variable',sans-serif; font-size:11px; color:var(--text-soft); margin-top:2px">통영·하동·태안</div>
+            </div>
+          </div>
+
+          <!-- Footer: companion entry -->
+          <div style="padding:12px 14px; background:var(--celadon-tint); border:1px dashed var(--celadon-soft); border-radius:12px; display:flex; align-items:flex-start; gap:10px">
+            <span class="companion" style="color:var(--celadon); margin-top:2px"><svg><use href="#ink-mark"/></svg></span>
+            <div style="flex:1">
+              <div style="font-family:'Noto Serif KR',serif; font-size:13px; color:var(--text); line-height:1.5">어떤 결의 여행이 좋은지 <em style="color:var(--celadon); font-style:italic">같이 정해볼까요?</em></div>
+              <div style="font-family:'Pretendard Variable',sans-serif; font-size:11px; color:var(--celadon); margin-top:4px">대화로 추천 받기 →</div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab"><div class="tab-dot"></div>홈</div>
+          <div class="tab active"><div class="tab-dot"></div>여행</div>
+          <div class="tab"><div class="tab-dot"></div>대화</div>
+          <div class="tab"><div class="tab-dot"></div>나</div>
+        </div>
+      </div>
+    </div>
+    <p class="caption"><strong>★ 간단 일정 시작 · v1 (NEW)</strong>도시 검색 + 인기 8개 chip + 분위기 4개 카드 + 컴패니언 대화 진입점. 사용자가 도시 명확하면 직접 검색 OR chip. 모호하면 "같이 정해볼까요" → 시나리오 01(태그 분석) 진입. <em>한 화면에 3가지 경로 동시 제공.</em></p>
+  </div>
+
+  <!-- 현장 컴패니언 (기존) -->
+  <div class="phone">
+    <div class="phone-num">★ v1 · ON-TRIP COMPANION</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="status-bar"><span>11:34</span><span class="icons">●●● ▮ 72</span></div>
+        <div class="screen-content">
+          <div class="greet" style="margin-top:18px; justify-content:space-between">
+            <div style="display:flex; align-items:center; gap:10px">
+              <span class="companion" style="color:var(--celadon)"><svg><use href="#ink-mark"/></svg></span>
+              <div>
+                <div style="font-family:'Noto Serif KR',serif; font-size:17px; font-weight:500; letter-spacing:-0.02em">함덕 해변</div>
+                <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--text-soft); letter-spacing:0.04em; margin-top:2px">11:34 · 바람 17°</div>
+              </div>
+            </div>
+            <div title="지도 모드" style="width:36px; height:36px; border-radius:50%; background:var(--bg); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; color:var(--text-muted)"><svg viewBox="0 0 24 24" style="width:18px;height:18px"><use href="#i-map"/></svg></div>
+          </div>
+
+          <p class="voice" style="margin-top:22px; margin-bottom:24px">오, <em>여기</em>네요.<br/>바람이 좀 있어요. 30분쯤 더<br/>머물러도 좋을 시간이에요.</p>
+
+          <!-- 큰 카드 (사진 있음) -->
+          <div style="background:var(--bg); border:1px solid var(--line); border-radius:14px; overflow:hidden; margin-bottom:10px">
+            <div style="height:140px; background: linear-gradient(135deg, #6B89B5 0%, #4A6FA5 50%, #2E4E7F 100%); position:relative; display:flex; align-items:flex-end; padding:10px 12px">
+              <span style="font-family:'DM Mono',monospace; font-size:11px; color:#F5EFE3; opacity:0.85; background:rgba(31,31,31,0.3); padding:3px 8px; border-radius:999px">3분 도보 · 카페</span>
+            </div>
+            <div style="padding:14px 14px 12px">
+              <h3 style="font-family:'Noto Serif KR',serif; font-size:17px; font-weight:500; margin:0 0 6px; letter-spacing:-0.02em">안목 해변 커피거리</h3>
+              <p style="font-family:'Noto Serif KR',serif; font-size:13px; font-style:italic; color:var(--celadon); margin:0 0 12px; line-height:1.45">사람 적은 시간이에요. 본점 말고 옆 카페 추천.</p>
+              <div style="display:flex; gap:8px; justify-content:flex-end; padding-top:8px; border-top:1px solid var(--line)">
+                <div style="width:36px; height:36px; border-radius:50%; background:var(--bg-elev); border:1px solid var(--juhong-soft); display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--juhong)">♥</div>
+                <div style="width:36px; height:36px; border-radius:50%; background:var(--bg-elev); border:1px solid var(--line-strong); display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--text-soft)">×</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 작은 카드 (사진 없음) -->
+          <div style="background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:14px; display:flex; align-items:center; gap:12px">
+            <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--text-soft); letter-spacing:0.04em; min-width:54px">4분 도보<br/>책방</div>
+            <div style="flex:1">
+              <div style="font-family:'Noto Serif KR',serif; font-size:14px; font-weight:500">사천진리 책방</div>
+              <div style="font-family:'Noto Serif KR',serif; font-size:11px; font-style:italic; color:var(--celadon); margin-top:1px">조용한 2층, 창가 자리</div>
+            </div>
+            <div style="display:flex; gap:6px">
+              <div style="width:44px; height:44px; border-radius:50%; background:var(--bg-elev); border:1px solid var(--juhong-soft); display:flex; align-items:center; justify-content:center; font-size:15px; color:var(--juhong)">♥</div>
+              <div style="width:44px; height:44px; border-radius:50%; background:var(--bg-elev); border:1px solid var(--line-strong); display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--text-soft)">×</div>
+            </div>
+          </div>
+
+          <!-- 음성 토글 (하단) -->
+          <div style="background:var(--celadon); color:#fff; padding:14px; border-radius:14px; display:flex; align-items:center; justify-content:center; gap:10px; font-family:'Noto Serif KR',serif; font-weight:500; font-size:15px; box-shadow:0 4px 16px rgba(74,111,165,0.25); margin-bottom:6px">
+            <svg viewBox="0 0 24 24" style="width:18px;height:18px"><use href="#i-mic"/></svg>
+            <span>음성으로 듣기</span>
+          </div>
+          <div style="font-family:'Pretendard Variable',sans-serif; font-size:11px; color:var(--text-soft); text-align:center; letter-spacing:0.04em">이어폰 끼고 켜면 백그라운드에서도 들려요</div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab"><div class="tab-dot"></div>홈</div>
+          <div class="tab active"><div class="tab-dot"></div>여행</div>
+          <div class="tab"><div class="tab-dot"></div>대화</div>
+          <div class="tab"><div class="tab-dot"></div>나</div>
+        </div>
+      </div>
+    </div>
+    <p class="caption" style="max-width:480px"><strong>★ 현장 컴패니언 · v1 핵심</strong>위치(함덕 해변) + 시간(11:34) + 날씨(바람 17°)를 컴패니언이 *알고 있다*는 신호. 명조 voice로 친구 한 마디 → 비대칭 카드 2개(큰 사진 + 작은 텍스트) → 하단 큰 음성 토글. 4개 다른 상태(loading · empty · listening · error)는 코드 단계에서 같은 토큰으로.</p>
+  </div>
+
+</main>
+
+<div class="section-label">현장 컴패니언 · view mode (A default · C 지도 모달)</div>
+<main class="board">
+
+  <!-- Direction C: Map-first -->
+  <div class="phone">
+    <div class="phone-num">DIRECTION C · MAP-FIRST</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="status-bar"><span>11:34</span><span class="icons">●●● ▮ 72</span></div>
+        <div style="height:240px; position:relative; background: linear-gradient(135deg, #E8E4DA 0%, #DDD8CC 50%, #C9C3B6 100%); border-bottom: 1px solid var(--line)">
+          <!-- 미니맵 그리드 효과 -->
+          <div style="position:absolute; inset:0; background-image: linear-gradient(rgba(74,111,165,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(74,111,165,0.06) 1px, transparent 1px); background-size: 32px 32px"></div>
+          <!-- 도로 -->
+          <div style="position:absolute; top:50%; left:0; right:0; height:3px; background:rgba(31,31,31,0.08)"></div>
+          <div style="position:absolute; top:0; bottom:0; left:55%; width:2px; background:rgba(31,31,31,0.08)"></div>
+          <!-- 현재 위치 (중앙, 큰 잉크) -->
+          <div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%)">
+            <span class="companion lg" style="color:var(--celadon); width:48px; height:48px"><svg><use href="#ink-mark"/></svg></span>
+          </div>
+          <!-- POI 핀 1 -->
+          <div style="position:absolute; left:30%; top:38%; display:flex; flex-direction:column; align-items:center">
+            <div style="width:24px; height:24px; border-radius:50%; background:var(--juhong); border:2px solid #FFFFFF; box-shadow:0 2px 6px rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center; color:#fff"><svg viewBox="0 0 24 24" style="width:12px;height:12px"><use href="#i-coffee"/></svg></div>
+            <div style="font-family:'DM Mono',monospace; font-size:9px; color:var(--text); background:rgba(245,239,227,0.9); padding:2px 4px; border-radius:4px; margin-top:2px">3분</div>
+          </div>
+          <!-- POI 핀 2 -->
+          <div style="position:absolute; left:72%; top:62%; display:flex; flex-direction:column; align-items:center">
+            <div style="width:22px; height:22px; border-radius:50%; background:var(--moss); border:2px solid #FFFFFF; box-shadow:0 2px 6px rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center; color:#fff"><svg viewBox="0 0 24 24" style="width:11px;height:11px"><use href="#i-book"/></svg></div>
+            <div style="font-family:'DM Mono',monospace; font-size:9px; color:var(--text); background:rgba(245,239,227,0.9); padding:2px 4px; border-radius:4px; margin-top:2px">4분</div>
+          </div>
+
+          <!-- Voice floating -->
+          <div style="position:absolute; left:16px; right:16px; bottom:12px; background:var(--bg-elev); border:1px solid var(--line); border-radius:12px; padding:10px 12px; box-shadow: 0 4px 16px rgba(31,31,31,0.08); display:flex; align-items:flex-start; gap:8px">
+            <span class="companion" style="color:var(--celadon)"><svg><use href="#ink-mark"/></svg></span>
+            <p style="font-family:'Noto Serif KR',serif; font-size:13px; line-height:1.45; margin:0; flex:1; color:var(--text)">바람 좋아요. 30분쯤 더 머물러도.</p>
+          </div>
+
+          <!-- 모달 close (floating, 좌상단) -->
+          <div title="모달 닫기 · A로 돌아가기" style="position:absolute; left:14px; top:14px; width:44px; height:44px; border-radius:50%; background:var(--bg-elev); border:1px solid var(--line-strong); box-shadow:0 2px 8px rgba(31,31,31,0.08); display:flex; align-items:center; justify-content:center; font-size:15px; color:var(--text-muted)">×</div>
+          <!-- 음성 토글 (floating, 우상단) -->
+          <div title="음성 모드" style="position:absolute; right:14px; top:14px; width:44px; height:44px; border-radius:50%; background:var(--bg-elev); border:1px solid var(--line-strong); box-shadow:0 2px 8px rgba(31,31,31,0.08); display:flex; align-items:center; justify-content:center; color:var(--text-muted)"><svg viewBox="0 0 24 24" style="width:20px;height:20px"><use href="#i-mic"/></svg></div>
+        </div>
+
+        <div style="flex:1; background:var(--bg-elev); padding:14px 18px; overflow-y:auto">
+          <!-- 시트 핸들 -->
+          <div style="width:36px; height:3px; background:var(--line-strong); border-radius:999px; margin:0 auto 14px"></div>
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px">
+            <div style="font-family:'Noto Serif KR',serif; font-size:14px; font-weight:500">인근 2곳</div>
+            <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--text-soft)">함덕 해변 · 17°</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--line)">
+            <div style="width:40px; height:40px; border-radius:8px; background:linear-gradient(135deg, #E8B860 0%, #C24A36 100%); flex-shrink:0"></div>
+            <div style="flex:1; min-width:0">
+              <div style="font-family:'Noto Serif KR',serif; font-size:14px; font-weight:500">안목 해변 커피거리</div>
+              <div style="font-family:'Noto Serif KR',serif; font-size:11px; font-style:italic; color:var(--celadon)">사람 적은 시간</div>
+            </div>
+            <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--text-muted)">3분</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; padding:10px 0">
+            <div style="width:40px; height:40px; border-radius:8px; background:linear-gradient(135deg, #88B098 0%, #5F8B6E 100%); flex-shrink:0"></div>
+            <div style="flex:1; min-width:0">
+              <div style="font-family:'Noto Serif KR',serif; font-size:14px; font-weight:500">사천진리 책방</div>
+              <div style="font-family:'Noto Serif KR',serif; font-size:11px; font-style:italic; color:var(--celadon)">조용한 2층</div>
+            </div>
+            <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--text-muted)">4분</div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab"><div class="tab-dot"></div>홈</div>
+          <div class="tab active"><div class="tab-dot"></div>여행</div>
+          <div class="tab"><div class="tab-dot"></div>대화</div>
+          <div class="tab"><div class="tab-dot"></div>나</div>
+        </div>
+      </div>
+    </div>
+    <p class="caption" style="max-width:480px"><strong>C · Map modal (지도 아이콘에서 진입)</strong>A 우상단 지도 아이콘 탭 → 풀스크린 지도. 상단 미니맵 + POI 핀, 하단 드래그 시트. \"어디지?\" 순간용. 좌상단 × 탭 → A로 복귀. 음성 토글은 그대로 우상단.</p>
+  </div>
+
+</main>
+
+<div class="section-label">★ 특별한 방식 · 편지처럼 읽는 일정</div>
+<main class="board" style="grid-template-columns: minmax(360px, 1fr); justify-items: center;">
+
+  <div class="phone" style="max-width: 420px;">
+    <div class="phone-num">★ SPECIAL · NOT A TIMETABLE</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="status-bar"><span>9:34</span><span class="icons">●●● ▮ 86</span></div>
+        <div class="screen-content">
+          <div class="letter-header">
+            <h2 class="letter-place">강릉 · Day 2</h2>
+            <div class="letter-meta">5월 14일 · 수요일 · 맑음 17°</div>
+          </div>
+
+          <div class="day-tabs">
+            <div class="day-tab"><span class="num">DAY 01</span>월</div>
+            <div class="day-tab active"><span class="num">DAY 02</span>화</div>
+            <div class="day-tab"><span class="num">DAY 03</span>수</div>
+          </div>
+
+          <div class="ink-timeline">
+            <div class="ink-track"></div>
+            <div class="ink-points">
+              <div class="ink-pt past"></div>
+              <div class="ink-pt past"></div>
+              <div class="ink-pt current"></div>
+              <div class="ink-pt"></div>
+              <div class="ink-pt"></div>
+              <div class="ink-pt"></div>
+              <div class="ink-pt"></div>
+            </div>
+          </div>
+          <div class="timeline-labels">
+            <span>07</span><span>09</span><span style="color:var(--celadon)">11</span><span>13</span><span>16</span><span>18</span><span>21</span>
+          </div>
+
+          <div class="letter-body" style="margin-top:20px">
+            <p>윤서님, 안녕하세요. <span class="t">10:30</span> 지금쯤 <span class="place">안목 해변</span>에서 모닝커피 한 잔하고 계시겠네요. 바람이 좀 있어요. 어제보다 1도 더 따뜻하대요.</p>
+
+            <p>이따 <span class="t">11:30</span>엔 <span class="place">사천진리 책방</span>으로 옮길까 해요. 윤서님이 <em>조용한 책방</em> 좋아한다고 했었잖아요. 2층 창가 자리가 비어있을 시간이에요. 한 시간쯤 머물러도 좋고, 마음에 들면 더 있어도 돼요.</p>
+
+            <p>점심은 <em>가볍게</em>. <span class="t">13:00</span> <span class="place">테라로사 사천점</span>에서 샌드위치 정도. 본점은 사람이 많으니까요.</p>
+
+            <p>오후엔 좀 멀리. <span class="t">15:30</span> <span class="place">정동진</span>까지 운전해 가는 거 어떠세요? 일몰 전에 돌아와도 되고, 거기서 노을 보고 와도 되고.</p>
+
+            <p style="color:var(--text-muted); font-size:13px; font-style:italic">— 비 소식이 살짝 있어서, 정동진 가는 길에 우산은 트렁크에 챙겨둘게요.</p>
+          </div>
+
+          <div class="letter-sign">— 오늘의 동행</div>
+
+          <div class="letter-reply">↳ 답장 쓰기 · 일정 바꾸고 싶어요</div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab"><div class="tab-dot"></div>홈</div>
+          <div class="tab active"><div class="tab-dot"></div>여행</div>
+          <div class="tab"><div class="tab-dot"></div>대화</div>
+          <div class="tab"><div class="tab-dot"></div>나</div>
+        </div>
+      </div>
+    </div>
+    <p class="caption" style="max-width:480px"><strong>★ 편지처럼 읽는 일정</strong>일정표 X. 친구가 쓴 <em style="color:var(--celadon)">편지</em> O.<br/>잉크 타임라인에 현재 시간이 호흡하고(11시), 본문은 명조 1인칭. 장소는 점선 밑줄(탭 가능), 시간은 DM Mono로 살짝. 끝에 *— 오늘의 동행* 서명, "답장 쓰기"로 수정. <strong style="color:var(--celadon)">다른 어떤 여행 앱에도 없는 형태.</strong></p>
+  </div>
+
+</main>
+
+<div class="section-label">Flow 5–7 · 떠나는 단계 · 머무는 단계</div>
+<main class="board">
+
+  <!-- 5. 예약 플랫폼 -->
+  <div class="phone">
+    <div class="phone-num">SCENARIO 05</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="status-bar"><span>9:42</span><span class="icons">●●● ▮ 83</span></div>
+        <div class="screen-content">
+          <div class="greet">
+            <span class="companion" style="color:var(--celadon)"><svg><use href="#ink-mark"/></svg></span>
+            <span class="greet-name">예약, 한 화면에</span>
+          </div>
+          <p class="voice sm">항공·숙소는 알아서 잡아뒀어요. <em>액티비티</em>는 한 번 봐주세요.</p>
+          <div class="book-row">
+            <div class="book-icon" style="background:var(--celadon-tint); color:var(--celadon)"><svg viewBox="0 0 24 24" style="width:18px;height:18px"><use href="#i-flight"/></svg></div>
+            <div class="book-info">
+              <div class="book-title">ICN → GNG</div>
+              <div class="book-meta">KE 1255 · 09:30 · 14A</div>
+            </div>
+            <div class="book-status done">확정</div>
+          </div>
+          <div class="book-row">
+            <div class="book-icon" style="background:var(--celadon-tint); color:var(--celadon)"><svg viewBox="0 0 24 24" style="width:18px;height:18px"><use href="#i-bed"/></svg></div>
+            <div class="book-info">
+              <div class="book-title">강릉 시그니엘</div>
+              <div class="book-meta">5/13–5/15 · 2박</div>
+            </div>
+            <div class="book-status pending">결제대기</div>
+          </div>
+          <div class="book-row">
+            <div class="book-icon" style="background:var(--moss); color:#fff"><svg viewBox="0 0 24 24" style="width:18px;height:18px"><use href="#i-wave"/></svg></div>
+            <div class="book-info">
+              <div class="book-title">서핑 클래스</div>
+              <div class="book-meta">5/14 14:00 · 안목</div>
+            </div>
+            <div class="book-status suggest">추천</div>
+          </div>
+          <div class="book-row">
+            <div class="book-icon" style="background:var(--amber); color:#5A4515"><svg viewBox="0 0 24 24" style="width:18px;height:18px"><use href="#i-coffee"/></svg></div>
+            <div class="book-info">
+              <div class="book-title">테라로사 사천점</div>
+              <div class="book-meta">5/14 10:00 · 예약 가능</div>
+            </div>
+            <div class="book-status suggest">추천</div>
+          </div>
+          <div class="book-total">
+            <span class="label">현재 합계</span>
+            <span class="amount">₩324,000</span>
+          </div>
+          <div class="cta-bottom">전체 결제로</div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab"><div class="tab-dot"></div>홈</div>
+          <div class="tab"><div class="tab-dot"></div>여행</div>
+          <div class="tab"><div class="tab-dot"></div>대화</div>
+          <div class="tab active"><div class="tab-dot"></div>나</div>
+        </div>
+      </div>
+    </div>
+    <p class="caption"><strong>05 · 예약 플랫폼 (v2+ · \"나\" 탭 sub-page)</strong>항공·숙소·액티비티 한 줄씩. 상태 칩으로 한눈에. 합계는 Fraunces로 친구가 적어주는 느낌. <strong style="color:var(--celadon)">v1엔 탭바에서 제거 — 사용 빈도 낮음. \"나\" 탭 안 sub-page로 v2 본격 구현.</strong></p>
+  </div>
+
+  <!-- 6. 돌발변수 리플랜 -->
+  <div class="phone">
+    <div class="phone-num">SCENARIO 06</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="status-bar"><span>14:08</span><span class="icons">●●● ▮ 64</span></div>
+        <div class="screen-content">
+          <div class="alert-banner">
+            <div class="alert-icon"><svg viewBox="0 0 24 24" style="width:16px;height:16px;color:#5A4515"><use href="#i-alert"/></svg></div>
+            <div class="alert-text"><strong>내일 오후 비 소식</strong><br/>15시–19시 강수 80%</div>
+          </div>
+          <div class="greet">
+            <span class="companion" style="color:var(--celadon)"><svg><use href="#ink-mark"/></svg></span>
+            <span class="greet-name">오후만 살짝 바꿔봤어요</span>
+          </div>
+          <p class="voice sm">윤서님이 "비는 좀 피하고 싶다"고 했었어요.<br/><em>실내 + 덮인 야외</em>로 다시 짰어요.</p>
+          <div class="plan-compare">
+            <div class="plan-block before">
+              <div class="plan-label">원래 계획</div>
+              <div class="plan-list">
+                <span class="stroke">14:00 안목해변 산책</span><br/>
+                <span class="stroke">16:00 정동진 일출 카페</span><br/>
+                <span class="stroke">18:30 경포대 야경</span>
+              </div>
+            </div>
+            <div class="plan-block after">
+              <div class="plan-label">제안 (실내·덮인 야외)</div>
+              <div class="plan-list">
+                14:00 사천진리 책방<br/>
+                16:00 테라로사 (실내 2층)<br/>
+                18:30 영진해변 파라솔 카페
+              </div>
+            </div>
+          </div>
+          <div class="button-row">
+            <div class="btn ghost">다른 방향</div>
+            <div class="btn primary">이대로 가요</div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab"><div class="tab-dot"></div>홈</div>
+          <div class="tab active"><div class="tab-dot"></div>여행</div>
+          <div class="tab"><div class="tab-dot"></div>대화</div>
+          <div class="tab"><div class="tab-dot"></div>나</div>
+        </div>
+      </div>
+    </div>
+    <p class="caption"><strong>06 · 돌발 리플랜 (v2 · 편지 일정 기반 큰 변경)</strong>황색 배너로 변수, 컴패니언이 사용자 과거 발언 인용. 전 일정 갈아엎지 않고 부분만. <strong style="color:var(--celadon)">v1에서는 별도 화면 X — 현장 컴패니언의 ALERT 카드(amber 배너 + 대안 카드 1-2개)로 통합.</strong> 큰 일정 변경은 v2 편지 일정과 함께.</p>
+  </div>
+
+  <!-- 7. TTS 동반자 -->
+  <div class="phone">
+    <div class="phone-num">SCENARIO 07 · VOICE MODE</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="status-bar"><span>11:34</span><span class="icons">●●● ▮ 72</span></div>
+        <div class="tts-screen" style="position:relative">
+          <div title="일기 모드 (텍스트로 보기)" style="position:absolute; top:16px; right:18px; width:44px; height:44px; border-radius:50%; background:var(--bg); border:1px solid var(--line-strong); display:flex; align-items:center; justify-content:center; color:var(--text-muted)"><svg viewBox="0 0 24 24" style="width:20px;height:20px"><use href="#i-scroll"/></svg></div>
+          <div class="tts-history">
+            "지금 함덕 해변이에요"<br/>
+            "오, 30분 더 머물러도 좋아요"
+          </div>
+          <div class="tts-companion">
+            <span class="companion lg listening" style="color:var(--celadon)"><svg><use href="#ink-mark"/></svg></span>
+          </div>
+          <p class="tts-voice">시간이<br/><em style="color:var(--celadon); font-style:italic">어땠어요?</em></p>
+          <div class="tts-waves">
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+          </div>
+          <div class="tts-controls">
+            <div class="tts-side-btn"><svg viewBox="0 0 24 24" style="width:20px;height:20px"><use href="#i-keyboard"/></svg></div>
+            <div class="tts-mic">●</div>
+            <div class="tts-side-btn">×</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="caption"><strong>07 · TTS · 음성 모드</strong>탭바 없음. 잉크 마크 큰 호흡 + ring pulse. 우상단 일기 아이콘 탭 → 일기 모드 전환. 이어폰 끼고 들을 때.</p>
+  </div>
+
+  <!-- 7-Diary: TTS 일기 모드 -->
+  <div class="phone">
+    <div class="phone-num">SCENARIO 07 · DIARY MODE</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="status-bar"><span>11:34</span><span class="icons">●●● ▮ 72</span></div>
+        <div class="screen-content" style="display:flex; flex-direction:column; padding:18px 22px 16px">
+
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px">
+            <div style="display:flex; align-items:center; gap:8px">
+              <span class="companion" style="color:var(--celadon)"><svg><use href="#ink-mark"/></svg></span>
+              <div>
+                <div style="font-family:'Noto Serif KR',serif; font-size:15px; font-weight:500">오늘의 대화</div>
+                <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--text-soft)">함덕 해변 · 5/14</div>
+              </div>
+            </div>
+            <div title="음성 모드로" style="width:44px; height:44px; border-radius:50%; background:var(--bg); border:1px solid var(--line-strong); display:flex; align-items:center; justify-content:center; color:var(--text-muted)"><svg viewBox="0 0 24 24" style="width:20px;height:20px"><use href="#i-mic"/></svg></div>
+          </div>
+
+          <div style="flex:1; overflow-y:auto">
+
+            <div style="margin-bottom:18px">
+              <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--text-soft); margin-bottom:4px">11:34 · 윤서</div>
+              <div style="font-family:'Pretendard Variable',sans-serif; font-size:14px; color:var(--text-muted); line-height:1.55; padding-left:10px; border-left:1px solid var(--line-strong)">지금 함덕 해변이에요</div>
+            </div>
+
+            <div style="margin-bottom:18px">
+              <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--celadon); margin-bottom:4px">11:35 · 동행</div>
+              <div style="font-family:'Noto Serif KR',serif; font-size:15px; line-height:1.7; color:var(--text); padding-left:10px; border-left:2px solid var(--celadon)">오, <em style="color:var(--celadon); font-style:italic">함덕</em>이네요. 바람이 좀 있어요. 30분쯤 더 머물러도 좋을 시간이에요.</div>
+            </div>
+
+            <div style="margin-bottom:18px">
+              <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--text-soft); margin-bottom:4px">11:48 · 윤서</div>
+              <div style="font-family:'Pretendard Variable',sans-serif; font-size:14px; color:var(--text-muted); line-height:1.55; padding-left:10px; border-left:1px solid var(--line-strong)">카페 가볼까</div>
+            </div>
+
+            <div style="margin-bottom:18px">
+              <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--celadon); margin-bottom:4px">11:48 · 동행</div>
+              <div style="font-family:'Noto Serif KR',serif; font-size:15px; line-height:1.7; color:var(--text); padding-left:10px; border-left:2px solid var(--celadon)">안목 해변 커피거리 어떠세요? <em style="color:var(--celadon); font-style:italic">사람 적은</em> 시간이에요.</div>
+            </div>
+
+            <div style="margin-bottom:18px">
+              <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--text-soft); margin-bottom:4px">12:02 · 윤서</div>
+              <div style="font-family:'Pretendard Variable',sans-serif; font-size:14px; color:var(--text-muted); line-height:1.55; padding-left:10px; border-left:1px solid var(--line-strong)">좋아 가볼게</div>
+            </div>
+
+            <div style="margin-bottom:8px">
+              <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--celadon); margin-bottom:4px">12:02 · 동행</div>
+              <div style="font-family:'Noto Serif KR',serif; font-size:15px; line-height:1.7; color:var(--text); padding-left:10px; border-left:2px solid var(--celadon)">3분 걸어요. 길 따라 쭉.</div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--line); display:flex; align-items:center; gap:10px">
+            <div style="flex:1; background:var(--bg); border:1px solid var(--line); border-radius:999px; padding:10px 14px; font-family:'Pretendard Variable',sans-serif; font-size:13px; color:var(--text-soft)">계속 적기…</div>
+            <div title="음성으로" style="width:44px; height:44px; border-radius:50%; background:var(--celadon); color:#fff; display:flex; align-items:center; justify-content:center"><svg viewBox="0 0 24 24" style="width:20px;height:20px"><use href="#i-mic"/></svg></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="caption"><strong>07 · TTS · 일기 모드 (NEW)</strong>같은 대화를 텍스트로. 사용자 발언은 Pretendard dim · 동행 발언은 Noto Serif KR + 좌측 청자 보더(편지 일정과 같은 결). 시간 · 화자 라벨은 DM Mono. 미팅 중·도서관·이어폰 X 상황에서 *읽으며 진행*. 하단 입력창 + 큰 마이크 아이콘으로 음성 모드 복귀.</p>
+  </div>
+
+</main>
+
+<div class="section-label">로고 마크 5종</div>
+<section class="logo-board">
+
+  <div class="logo-card">
+    <div class="logo-head">
+      <div class="logo-title">옆에 있는 두 점</div>
+      <div class="logo-letter">MARK A</div>
+    </div>
+    <div class="logo-canvas-row">
+      <div class="logo-canvas light">
+        <svg viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg" style="color:#4A6FA5">
+          <ellipse cx="38" cy="36" rx="18" ry="17" fill="currentColor" opacity="0.92"/>
+          <ellipse cx="32" cy="30" rx="6" ry="5" fill="currentColor" opacity="0.42"/>
+          <circle cx="44" cy="40" r="3" fill="currentColor" opacity="0.55"/>
+          <circle cx="74" cy="40" r="10" fill="currentColor" opacity="0.88"/>
+          <circle cx="72" cy="37" r="3" fill="currentColor" opacity="0.42"/>
+        </svg>
+      </div>
+      <div class="logo-canvas dark">
+        <svg viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg" style="color:#88A5D4">
+          <ellipse cx="38" cy="36" rx="18" ry="17" fill="currentColor" opacity="0.92"/>
+          <ellipse cx="32" cy="30" rx="6" ry="5" fill="currentColor" opacity="0.42"/>
+          <circle cx="44" cy="40" r="3" fill="currentColor" opacity="0.55"/>
+          <circle cx="74" cy="40" r="10" fill="currentColor" opacity="0.88"/>
+          <circle cx="72" cy="37" r="3" fill="currentColor" opacity="0.42"/>
+        </svg>
+      </div>
+    </div>
+    <p class="logo-desc"><strong style="color:var(--text)">큰 점 + 작은 점.</strong> "혼자지만 함께"의 가장 직접적 시각화. 사용자(큰 점) 옆에 컴패니언(작은 점). 메모러블 명제와 1:1 직결.</p>
+  </div>
+
+  <div class="logo-card">
+    <div class="logo-head">
+      <div class="logo-title">잉크 + 부드러운 호</div>
+      <div class="logo-letter">MARK B</div>
+    </div>
+    <div class="logo-canvas-row">
+      <div class="logo-canvas light">
+        <svg viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg" style="color:#4A6FA5">
+          <path d="M 18 50 Q 50 5 82 50" stroke="currentColor" stroke-width="2.5" fill="none" opacity="0.38" stroke-linecap="round"/>
+          <ellipse cx="50" cy="44" rx="14" ry="13" fill="currentColor" opacity="0.92"/>
+          <ellipse cx="45" cy="39" rx="4.5" ry="3.5" fill="currentColor" opacity="0.42"/>
+          <circle cx="55" cy="47" r="2.5" fill="currentColor" opacity="0.55"/>
+        </svg>
+      </div>
+      <div class="logo-canvas dark">
+        <svg viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg" style="color:#88A5D4">
+          <path d="M 18 50 Q 50 5 82 50" stroke="currentColor" stroke-width="2.5" fill="none" opacity="0.5" stroke-linecap="round"/>
+          <ellipse cx="50" cy="44" rx="14" ry="13" fill="currentColor" opacity="0.92"/>
+          <ellipse cx="45" cy="39" rx="4.5" ry="3.5" fill="currentColor" opacity="0.42"/>
+          <circle cx="55" cy="47" r="2.5" fill="currentColor" opacity="0.55"/>
+        </svg>
+      </div>
+    </div>
+    <p class="logo-desc"><strong style="color:var(--text)">한 점 + 어깨를 두른 호.</strong> 친구가 어깨에 팔을 두른 듯한 보호감. 동행감을 *감싸는 자세*로 시각화. 가장 감정적.</p>
+  </div>
+
+  <div class="logo-card">
+    <div class="logo-head">
+      <div class="logo-title">단일 잉크 (시스템 마크 확장)</div>
+      <div class="logo-letter">MARK C</div>
+    </div>
+    <div class="logo-canvas-row">
+      <div class="logo-canvas light">
+        <svg viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg" style="color:#4A6FA5">
+          <ellipse cx="35" cy="35" rx="22" ry="20" fill="currentColor" opacity="0.92"/>
+          <ellipse cx="28" cy="27" rx="7" ry="5" fill="currentColor" opacity="0.38"/>
+          <circle cx="42" cy="42" r="4" fill="currentColor" opacity="0.55"/>
+          <ellipse cx="38" cy="33" rx="3" ry="2" fill="currentColor" opacity="0.3"/>
+        </svg>
+      </div>
+      <div class="logo-canvas dark">
+        <svg viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg" style="color:#88A5D4">
+          <ellipse cx="35" cy="35" rx="22" ry="20" fill="currentColor" opacity="0.92"/>
+          <ellipse cx="28" cy="27" rx="7" ry="5" fill="currentColor" opacity="0.38"/>
+          <circle cx="42" cy="42" r="4" fill="currentColor" opacity="0.55"/>
+          <ellipse cx="38" cy="33" rx="3" ry="2" fill="currentColor" opacity="0.3"/>
+        </svg>
+      </div>
+    </div>
+    <p class="logo-desc"><strong style="color:var(--text)">컴패니언 마크 그대로.</strong> 앱 안의 잉크 마크가 그대로 로고가 됨. 시스템 응집력 최강. 단점은 단독으로 보면 단순해서 *컴패니언 = 사용자*로 읽힐 위험.</p>
+  </div>
+
+  <div class="logo-card">
+    <div class="logo-head">
+      <div class="logo-title">한 획에서 갈라진 두 점</div>
+      <div class="logo-letter">MARK D</div>
+    </div>
+    <div class="logo-canvas-row">
+      <div class="logo-canvas light">
+        <svg viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg" style="color:#4A6FA5">
+          <path d="M 18 38 Q 50 26 82 38" stroke="currentColor" stroke-width="2" fill="none" opacity="0.35" stroke-linecap="round"/>
+          <ellipse cx="22" cy="42" rx="14" ry="12" fill="currentColor" opacity="0.92"/>
+          <ellipse cx="18" cy="38" rx="4" ry="3" fill="currentColor" opacity="0.4"/>
+          <circle cx="80" cy="36" r="8" fill="currentColor" opacity="0.85"/>
+          <circle cx="78" cy="33" r="2" fill="currentColor" opacity="0.4"/>
+        </svg>
+      </div>
+      <div class="logo-canvas dark">
+        <svg viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg" style="color:#88A5D4">
+          <path d="M 18 38 Q 50 26 82 38" stroke="currentColor" stroke-width="2" fill="none" opacity="0.45" stroke-linecap="round"/>
+          <ellipse cx="22" cy="42" rx="14" ry="12" fill="currentColor" opacity="0.92"/>
+          <ellipse cx="18" cy="38" rx="4" ry="3" fill="currentColor" opacity="0.4"/>
+          <circle cx="80" cy="36" r="8" fill="currentColor" opacity="0.85"/>
+          <circle cx="78" cy="33" r="2" fill="currentColor" opacity="0.4"/>
+        </svg>
+      </div>
+    </div>
+    <p class="logo-desc"><strong style="color:var(--text)">한 붓 한 호흡에서 갈라진 두 점.</strong> "같은 출발선의 두 여행자". 가장 시적. 여행의 *과정성*(붓 자국)이 동행감과 합쳐짐.</p>
+  </div>
+
+  <div class="logo-card">
+    <div class="logo-head">
+      <div class="logo-title">단청 도장</div>
+      <div class="logo-letter">MARK E</div>
+    </div>
+    <div class="logo-canvas-row">
+      <div class="logo-canvas light">
+        <svg viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg">
+          <rect x="5" y="5" width="60" height="60" rx="8" fill="#C24A36"/>
+          <ellipse cx="35" cy="35" rx="20" ry="18" fill="#F5EFE3"/>
+          <ellipse cx="29" cy="29" rx="5" ry="4" fill="#C24A36" opacity="0.28"/>
+          <circle cx="42" cy="42" r="3" fill="#C24A36" opacity="0.4"/>
+        </svg>
+      </div>
+      <div class="logo-canvas dark">
+        <svg viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg">
+          <rect x="5" y="5" width="60" height="60" rx="8" fill="#E3725E"/>
+          <ellipse cx="35" cy="35" rx="20" ry="18" fill="#1A1F2A"/>
+          <ellipse cx="29" cy="29" rx="5" ry="4" fill="#E3725E" opacity="0.32"/>
+          <circle cx="42" cy="42" r="3" fill="#E3725E" opacity="0.45"/>
+        </svg>
+      </div>
+    </div>
+    <p class="logo-desc"><strong style="color:var(--text)">주홍 도장 안에 잉크.</strong> 가장 *한국 전통*. 단청 주홍이 메인 자리에 들어와서 강한 시각 정체성. 단점은 한국 박물관·관광공사 느낌이 살짝 묻을 수 있음.</p>
+  </div>
+
+</section>
+
+<div class="section-label">앱 이름 후보 × 락업 (MARK A 기준)</div>
+<section class="wordmark-board">
+
+  <div class="wordmark-card">
+    <div class="wordmark-lockup">
+      <div class="wordmark-mark">
+        <svg viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="38" cy="36" rx="18" ry="17" fill="currentColor" opacity="0.92"/>
+          <ellipse cx="32" cy="30" rx="6" ry="5" fill="currentColor" opacity="0.42"/>
+          <circle cx="74" cy="40" r="10" fill="currentColor" opacity="0.88"/>
+        </svg>
+      </div>
+      <div class="wordmark-stack">
+        <div class="wordmark-ko">곁</div>
+        <div class="wordmark-latin">Gyeot</div>
+      </div>
+    </div>
+    <div class="wordmark-meaning"><strong>"옆에 있는 자리"</strong><br/>한 글자, 도장 같은 무게감. 짧고 강함. 발음도 한 음절.</div>
+  </div>
+
+  <div class="wordmark-card" style="border:2px solid #4A6FA5; position:relative">
+    <div style="position:absolute; top:12px; right:14px; background:#C24A36; color:#fff; font-family:'Noto Serif KR',serif; font-size:11px; padding:4px 10px; border-radius:999px; font-weight:500; letter-spacing:0.04em">✓ 선택</div>
+    <div class="wordmark-lockup">
+      <div class="wordmark-mark">
+        <svg viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="38" cy="36" rx="18" ry="17" fill="currentColor" opacity="0.92"/>
+          <ellipse cx="32" cy="30" rx="6" ry="5" fill="currentColor" opacity="0.42"/>
+          <circle cx="74" cy="40" r="10" fill="currentColor" opacity="0.88"/>
+        </svg>
+      </div>
+      <div class="wordmark-stack">
+        <div class="wordmark-ko">동행</div>
+        <div class="wordmark-latin">Donghaeng</div>
+      </div>
+    </div>
+    <div class="wordmark-meaning"><strong>"같이 가는 사람"</strong><br/>동(同) + 행(行). 직설적 명료성. 신규 사용자도 1초 안에 의미 파악. 약점인 *검색 묻힘*은 마크의 독창성으로 보완.</div>
+  </div>
+
+  <div class="wordmark-card">
+    <div class="wordmark-lockup">
+      <div class="wordmark-mark">
+        <svg viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="38" cy="36" rx="18" ry="17" fill="currentColor" opacity="0.92"/>
+          <ellipse cx="32" cy="30" rx="6" ry="5" fill="currentColor" opacity="0.42"/>
+          <circle cx="74" cy="40" r="10" fill="currentColor" opacity="0.88"/>
+        </svg>
+      </div>
+      <div class="wordmark-stack">
+        <div class="wordmark-ko">나란히</div>
+        <div class="wordmark-latin">Naranhi</div>
+      </div>
+    </div>
+    <div class="wordmark-meaning"><strong>"옆으로 줄지어"</strong><br/>두 점의 배치 그 자체. 시각적 메타포가 이름이 됨. 검색 독창성 ↑.</div>
+  </div>
+
+  <div class="wordmark-card">
+    <div class="wordmark-lockup">
+      <div class="wordmark-mark">
+        <svg viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="38" cy="36" rx="18" ry="17" fill="currentColor" opacity="0.92"/>
+          <ellipse cx="32" cy="30" rx="6" ry="5" fill="currentColor" opacity="0.42"/>
+          <circle cx="74" cy="40" r="10" fill="currentColor" opacity="0.88"/>
+        </svg>
+      </div>
+      <div class="wordmark-stack">
+        <div class="wordmark-ko">옆에</div>
+        <div class="wordmark-latin">Yeope</div>
+      </div>
+    </div>
+    <div class="wordmark-meaning"><strong>"바로 옆"</strong><br/>가장 친근한 톤. 부사 그대로 이름. 진입장벽 ↓ 하지만 격조도 ↓.</div>
+  </div>
+
+</section>
+
+<section class="tokens">
+  <h2>토큰 레퍼런스</h2>
+  <div class="tokens-grid">
+
+    <div class="token-section">
+      <h3>Color · 단청 청자</h3>
+      <div class="swatch-list">
+        <div class="swatch"><div class="swatch-dot" style="background:#4A6FA5"></div><div class="swatch-meta"><div class="swatch-name">청자 (Celadon)</div><div class="swatch-hex">#4A6FA5 · 메인 액센트</div></div></div>
+        <div class="swatch"><div class="swatch-dot" style="background:#1F1F1F"></div><div class="swatch-meta"><div class="swatch-name">먹 (Ink)</div><div class="swatch-hex">#1F1F1F · 본문</div></div></div>
+        <div class="swatch"><div class="swatch-dot" style="background:#F5EFE3;border:1px solid #ccc"></div><div class="swatch-meta"><div class="swatch-name">한지 (Hanji)</div><div class="swatch-hex">#F5EFE3 · 서피스</div></div></div>
+        <div class="swatch"><div class="swatch-dot" style="background:#C24A36"></div><div class="swatch-meta"><div class="swatch-name">주홍</div><div class="swatch-hex">#C24A36 · 희소 강조 (확정 등)</div></div></div>
+        <div class="swatch"><div class="swatch-dot" style="background:#5F8B6E"></div><div class="swatch-meta"><div class="swatch-name">녹청</div><div class="swatch-hex">#5F8B6E · 자연·success</div></div></div>
+        <div class="swatch"><div class="swatch-dot" style="background:#E8B860"></div><div class="swatch-meta"><div class="swatch-name">황</div><div class="swatch-hex">#E8B860 · 주의·돌발변수</div></div></div>
+      </div>
+    </div>
+
+    <div class="token-section">
+      <h3>Typography</h3>
+      <div class="type-specimen">
+        <div class="specimen-row"><div class="specimen-label">Voice · Noto Serif KR</div><div class="specimen-noto">시간이 어땠어요?</div></div>
+        <div class="specimen-row"><div class="specimen-label">Latin / Numeral · Fraunces italic</div><div class="specimen-fraunces">94<span style="font-size:18px">%</span> · Plan A</div></div>
+        <div class="specimen-row"><div class="specimen-label">Body · Pretendard Variable</div><div class="specimen-pretendard">윤서님같은 분에게 어울릴 거예요.</div></div>
+        <div class="specimen-row"><div class="specimen-label">Data · DM Mono (tnum)</div><div class="specimen-mono">09:30 → 10:35 · KE1255 · 14A</div></div>
+      </div>
+    </div>
+
+    <div class="token-section">
+      <h3>시나리오별 컴패니언 상태</h3>
+      <div class="type-specimen">
+        <div class="specimen-row"><div class="specimen-label">평상 (모든 화면 상단)</div><div class="specimen-pretendard">24px 잉크 마크 + 4s 호흡 사이클</div></div>
+        <div class="specimen-row"><div class="specimen-label">강조 발화 (음성 인용)</div><div class="specimen-pretendard">청자 좌측 보더 + 한국어 명조</div></div>
+        <div class="specimen-row"><div class="specimen-label">TTS Listening</div><div class="specimen-pretendard">96px + 2s 호흡 + 외곽 ring pulse</div></div>
+        <div class="specimen-row"><div class="specimen-label">탭바</div><div class="specimen-pretendard">"대화" 탭이 TTS 진입 (07로)</div></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="notes">
+  <h3>한 가지 명제, 일곱 가지 표현</h3>
+  <ul>
+    <li><strong>친구가 옆에 있다는 느낌.</strong> 화면이 바뀌어도 컴패니언은 같은 잉크 마크로 호흡합니다. 짜는 단계(01–04)에선 묻고, 떠나는 단계(05)에선 정리하고, 머무는 단계(06–07)에선 곁에서 알아챕니다.</li>
+    <li><strong>주색은 1년에 세 번.</strong> 단청 주홍(#C24A36)은 예약 확정 같이 "됐다" 신호에만. 황색(#E8B860)은 변수 알림에만. 액센트의 희소성이 신뢰감을 만들어요.</li>
+    <li><strong>숫자도 사람 냄새.</strong> 매칭 점수·총액·구간 시간은 Fraunces 이탤릭으로 — 친구가 손으로 적어준 느낌. 시간·항공편 같은 *데이터*는 DM Mono tabular로 정확하게.</li>
+    <li><strong>TTS 화면만 탭바 없음.</strong> 대화 모드는 *그 안에만 있는 시간*. 시스템 chrome이 사라지고 컴패니언과 둘만 남습니다.</li>
+    <li><strong>같은 시스템, 다른 정보밀도.</strong> 추천(02)·POI(03)·예약(05)은 세로 1단 카드. 동선(04)은 시각적 무드 비교. TTS(07)는 가운데 정렬 미니멀. 일관성은 토큰 단위에서, 자유는 레이아웃 단위에서.</li>
+  </ul>
+</section>
+
+<footer>design-preview.html · 2026-05-12 · /design-consultation · 7 scenarios</footer>
+
+</div>
+
+<script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  const next = current === 'dark' ? null : 'dark';
+  if (next) html.setAttribute('data-theme', next);
+  else html.removeAttribute('data-theme');
+  document.querySelector('.theme-toggle').textContent = next === 'dark' ? '라이트 모드' : '다크 모드';
+}
+
+// 온보딩 mockup 탭하면 entrance 애니메이션 재생
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.onboard-screen').forEach(screen => {
+    screen.style.cursor = 'pointer';
+    screen.title = '탭하면 애니메이션 다시 재생';
+    screen.addEventListener('click', function() {
+      const els = this.querySelectorAll('.companion.lg, .onboard-heading, .onboard-body, .onboard-cta, .onboard-link');
+      els.forEach(el => {
+        const saved = el.style.animation;
+        el.style.animation = 'none';
+        void el.offsetWidth; // force reflow
+        el.style.animation = '';
+      });
+    });
+  });
+});
+</script>
+
+</body>
+</html>
