@@ -1,0 +1,19 @@
+{
+  "name": "@trip/server",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Hono + bun + Claude Code CLI proxy",
+  "scripts": {
+    "dev": "bun --hot src/index.ts",
+    "start": "bun src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "echo 'TODO: vitest (Day 2a)'"
+  },
+  "dependencies": {
+    "@trip/types": "workspace:*",
+    "hono": "^4.6.13"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14"
+  }
+}

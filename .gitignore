@@ -1,0 +1,89 @@
+# Node
+node_modules/
+*.log
+.npm/
+
+# Bun
+.bun-cache/
+
+# Turborepo
+.turbo/
+
+# TypeScript
+*.tsbuildinfo
+dist/
+build/
+
+# Expo
+.expo/
+.expo-shared/
+*.tgz
+*.apk
+*.aab
+*.ipa
+web-build/
+
+# React Native
+.gradle/
+android/app/build/
+android/build/
+android/.gradle/
+ios/build/
+ios/Pods/
+ios/DerivedData/
+*.xcworkspace
+*.xcuserdata/
+
+# Native
+local.properties
+*.keystore
+!debug.keystore
+
+# Environment (★ 절대 commit 금지)
+.env
+.env.local
+.env.*.local
+.env.production
+
+# Editor
+.vscode/
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python (backend/ai-tts)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+venv/
+.venv/
+
+# Logs
+logs/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Misc
+.cache/
+*.tmp
+*.bak
+
+# Claude Code local config — host별 settings만 ignore
+# .claude/agents/, .claude/skills/ 는 commit (하네스 정의)
+.claude/settings.json
+.claude/settings.local.json
+
+# Backup
+docs/design-preview_back_up.html

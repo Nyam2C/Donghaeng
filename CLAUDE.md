@@ -30,12 +30,32 @@ QA·코드 리뷰 시 `docs/DESIGN.md` 위반이 보이면 *즉시* 플래그.
 - **디자인 시스템:** 확정 (`docs/DESIGN.md`)
 - **프로토타입:** `docs/design-preview.html` (7 시나리오 + 로고 마크 5종)
 - **엔지니어링 plan:** `docs/ENG-PLAN.md` (D1-D12 확정, Turborepo + Docker + Scaffold freeze 워크플로)
-- **코드:** 미작성. Phase 0 prep 대기 중.
+- **Phase 1 완료** — Turborepo + bun workspaces + Docker (server + ai-tts healthy) + Expo SDK 54 + husky 9 + GitHub Actions CI + Scaffold Day (~150 stub 파일 + git tag `scaffold-freeze`)
+- **Phase 2 대기** (Shell, Day 5-6)
 
-## 다음 단계 (권장)
-1. `/office-hours` 다시 돌려서 7개 시나리오 중 v1 wedge 1개로 좁히기
-2. 좁혀진 v1 기능에 대해 `/plan-eng-review`로 아키텍처 확정
-3. 그 다음 코드 작성
+## 다음 단계
+1. 머지 후 Phase 2 시작 — `phase-cycle` 하네스가 워크플로 통합 실행
+2. Phase 2 (Shell) → Phase 3 (간단 일정) → ... → Phase 7 (TestFlight, ~4.6주)
+
+## 하네스: 동행 v1 phase 워크플로
+
+**목표:** Phase 2~7 의 *원테이크 → 확인 → 리뷰 → 머지* 사이클 자동화 + DESIGN.md/scaffold-freeze 가드.
+
+**트리거:** Phase 진입/완료, lane 분배, agent team spawn, D 결정 추가, ENG-PLAN 갱신 같은 요청 시 `phase-cycle` 스킬을 사용하라. 단순 질문이나 read-only 탐색은 직접 응답 가능.
+
+| 작업 유형 | 호출 |
+|---|---|
+| Phase 시작/완료/검증/머지 | `phase-cycle` 스킬 |
+| Lane F + B + T 병렬 spawn | `phase-cycle` 또는 `scaffold-spawn` 직접 |
+| 새 D 결정 + ENG-PLAN 갱신 | `eng-plan-keeper` 스킬 |
+| DESIGN.md 위반 검사 | `design-guard` 에이전트 |
+| scaffold-freeze 위반 검사 | `scaffold-guard` 에이전트 |
+
+**변경 이력:**
+
+| 날짜 | 변경 내용 | 대상 | 사유 |
+|------|----------|------|------|
+| 2026-05-13 | 초기 구성 | 전체 (5 agents + 3 skills) | Phase 2-7 반복 워크플로 자동화, D12 freeze 가드 필요 |
 
 ## Skill routing
 
