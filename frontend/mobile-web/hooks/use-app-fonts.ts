@@ -27,16 +27,15 @@ import { useFonts as useGoogleFonts } from 'expo-font'
 
 export function useAppFonts(): [boolean, Error | null] {
   return useGoogleFonts({
-    // Voice · 한글 헤딩
-    NotoSerifKR_400Regular,
-    NotoSerifKR_500Medium,
-    NotoSerifKR_600SemiBold,
-    // Latin · 숫자 강조 (italic)
-    Fraunces_400Regular_Italic,
-    Fraunces_500Medium_Italic,
-    // Data · time · mono
-    DMMono_400Regular,
-    DMMono_500Medium,
+    // theme/fonts.family 토큰 키와 정합되도록 alias 등록 (D15 review · P1 fix)
+    // RN fontFamily prop 은 expo-font 등록 키와 정확히 일치해야 적용됨
+    NotoSerifKR: NotoSerifKR_400Regular,
+    'NotoSerifKR-Medium': NotoSerifKR_500Medium,
+    'NotoSerifKR-SemiBold': NotoSerifKR_600SemiBold,
+    'Fraunces-Italic': Fraunces_400Regular_Italic,
+    'Fraunces-Italic-Medium': Fraunces_500Medium_Italic,
+    DMMono: DMMono_400Regular,
+    'DMMono-Medium': DMMono_500Medium,
     // ...pretendardSources,
   })
 }

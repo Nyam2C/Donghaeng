@@ -151,7 +151,7 @@ export default function Home() {
         />
         <QuickAction href="/talk" label="대화" dotSize={11} align="left" offsetTop={spacing.xl} />
         <QuickAction
-          href="/(tabs)/profile"
+          href="/profile"
           label="내 결"
           dotSize={8}
           align="center"

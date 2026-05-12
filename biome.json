@@ -16,7 +16,8 @@
       ".bun-cache",
       "coverage",
       "docs/design-preview.html",
-      "docs/design-preview_back_up.html"
+      "docs/design-preview_back_up.html",
+      "**/expo-env.d.ts"
     ]
   },
   "formatter": {

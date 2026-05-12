@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AccessibilityInfo, View, useColorScheme } from 'react-native'
+import { AccessibilityInfo, View } from 'react-native'
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -12,7 +12,7 @@ import Svg, { Circle, Ellipse } from 'react-native-svg'
 
 import type { Glow } from '@trip/types'
 
-import { darkColors, lightColors } from '@/theme'
+import { lightColors } from '@/theme'
 
 /**
  * InkMark — 동행 컴패니언 잉크 마크 (DESIGN.md 라인 170-174 · logo.svg 형상)
@@ -20,6 +20,7 @@ import { darkColors, lightColors } from '@/theme'
  *  - 4초 호흡 사이클 (scale 1.0 ↔ 1.04 · opacity 0.94 ↔ 1.0)
  *  - ReduceMotion 활성화 시 정지 (AccessibilityInfo listener)
  *  - glow: Phase 2 엔 normal 처럼 렌더 (색 변환은 Phase 4-5 확장)
+ *  - dark mode: v1 보류 (review D1 결정) — lightColors 만 사용. Phase 5+ 에 정합 dark mode 별도 D
  *
  * 시그니처: stub freeze (size · glow required). breathing 토글은 ReduceMotion 으로만.
  */
@@ -28,17 +29,15 @@ export interface InkMarkProps {
   glow: Glow
 }
 
-const glowToColor = (glow: Glow, isDark: boolean): string => {
+const glowToColor = (glow: Glow): string => {
   // Phase 2: 모든 glow 를 celadon 으로 (state machine 확장은 Phase 4-5)
   // 시그니처 호환을 위해 glow 인자는 받기만 함
   void glow
-  return isDark ? darkColors.celadon : lightColors.celadon
+  return lightColors.celadon
 }
 
 export function InkMark({ size, glow }: InkMarkProps) {
-  const scheme = useColorScheme()
-  const isDark = scheme === 'dark'
-  const fill = glowToColor(glow, isDark)
+  const fill = glowToColor(glow)
 
   const scale = useSharedValue(1)
   const opacity = useSharedValue(1)
