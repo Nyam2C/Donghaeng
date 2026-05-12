@@ -1,0 +1,6 @@
+{
+  "name": "@trip/mobile-web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Expo (모바일 + 웹) — Phase 1 Day 3 Scaffold Day에 expo template으로 덮어씀"
+}

@@ -1,0 +1,10 @@
+{
+  "name": "@trip/ai-tts",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Python edge-tts FastAPI 컨테이너 — package.json은 turbo task wrapper용 dummy",
+  "scripts": {
+    "dev": "docker compose up tts",
+    "build": "docker build -t trip-ai-tts ."
+  }
+}

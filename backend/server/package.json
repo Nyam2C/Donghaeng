@@ -1,0 +1,10 @@
+{
+  "name": "@trip/server",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Hono + bun + Claude Code CLI proxy — Phase 1 Day 3에 채움",
+  "scripts": {
+    "dev": "echo 'TODO: bun --hot src/index.ts (Phase 1 Day 3)'",
+    "typecheck": "echo 'TODO: tsc --noEmit'"
+  }
+}
