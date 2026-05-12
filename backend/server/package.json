@@ -2,9 +2,17 @@
   "name": "@trip/server",
   "version": "0.0.0",
   "private": true,
-  "description": "Hono + bun + Claude Code CLI proxy — Phase 1 Day 3에 채움",
+  "description": "Hono + bun + Claude Code CLI proxy",
   "scripts": {
-    "dev": "echo 'TODO: bun --hot src/index.ts (Phase 1 Day 3)'",
-    "typecheck": "echo 'TODO: tsc --noEmit'"
+    "dev": "bun --hot src/index.ts",
+    "start": "bun src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "echo 'TODO: vitest (Day 2a)'"
+  },
+  "dependencies": {
+    "hono": "^4.6.13"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14"
   }
 }

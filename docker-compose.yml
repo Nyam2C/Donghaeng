@@ -1,0 +1,56 @@
+# =============================================================================
+# 동행 v1 · docker-compose (backend 전용 — D9, D10)
+#
+# 사용법:
+#   bun run docker:up      # -d (background)
+#   bun run docker:up:fg   # foreground
+#   bun run docker:logs    # tail -f
+#   bun run docker:down
+# =============================================================================
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: backend/server/Dockerfile
+    container_name: trip-server
+    ports:
+      - '3000:3000'
+    env_file: .env
+    volumes:
+      # Claude Code CLI 인증 (호스트 OAuth 토큰 bind mount — D9-b)
+      # 호스트에서 `claude login` 1회 후 동작
+      - ${HOME}/.claude:/root/.claude:ro
+      # Hot reload (dev)
+      - ./backend/server/src:/app/backend/server/src:ro
+      - ./shared:/app/shared:ro
+    networks: [trip-net]
+    restart: unless-stopped
+    depends_on:
+      tts:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://localhost:3000/health']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  tts:
+    build:
+      context: ./backend/ai-tts
+    container_name: trip-tts
+    ports:
+      - '8000:8000'
+    networks: [trip-net]
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://localhost:8000/health']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+networks:
+  trip-net:
+    driver: bridge
