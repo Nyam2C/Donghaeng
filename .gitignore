@@ -80,8 +80,10 @@ coverage/
 *.tmp
 *.bak
 
-# Claude Code local config (host 환경별)
-.claude/
+# Claude Code local config — host별 settings만 ignore
+# .claude/agents/, .claude/skills/ 는 commit (하네스 정의)
+.claude/settings.json
+.claude/settings.local.json
 
 # Backup
 docs/design-preview_back_up.html
