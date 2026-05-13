@@ -25,18 +25,20 @@ import { spacing } from '@/theme/spacing'
 type QuickActionProps = {
   href: string
   label: string
+  description: string
   dotSize: number
   align: 'left' | 'center' | 'right'
   offsetTop: number
 }
 
-function QuickAction({ href, label, dotSize, align, offsetTop }: QuickActionProps) {
+function QuickAction({ href, label, description, dotSize, align, offsetTop }: QuickActionProps) {
   const justify = align === 'left' ? 'flex-start' : align === 'right' ? 'flex-end' : 'center'
   return (
     <Link href={href as never} asChild>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={label}
+        accessibilityHint={description}
         style={{
           marginTop: offsetTop,
           alignSelf:
@@ -61,18 +63,32 @@ function QuickAction({ href, label, dotSize, align, offsetTop }: QuickActionProp
             borderRadius: dotSize / 2,
             backgroundColor: lightColors.celadon,
             opacity: 0.88,
+            marginTop: 2,
           }}
         />
-        <Text
-          style={{
-            fontFamily: fonts.family.ui,
-            fontSize: fonts.size.body,
-            lineHeight: fonts.size.body * fonts.lineHeight.body,
-            color: lightColors.text,
-          }}
-        >
-          {label}
-        </Text>
+        <View style={{ flexShrink: 1 }}>
+          <Text
+            style={{
+              fontFamily: fonts.family.ui,
+              fontSize: fonts.size.body,
+              lineHeight: fonts.size.body * fonts.lineHeight.body,
+              color: lightColors.text,
+            }}
+          >
+            {label}
+          </Text>
+          <Text
+            style={{
+              fontFamily: fonts.family.ui,
+              fontSize: fonts.size.caption,
+              lineHeight: fonts.size.caption * fonts.lineHeight.caption,
+              color: lightColors.textSoft,
+              marginTop: 2,
+            }}
+          >
+            {description}
+          </Text>
+        </View>
       </Pressable>
     </Link>
   )
@@ -112,9 +128,30 @@ export default function Home() {
         <InkMark size={24} glow="normal" />
       </View>
 
-      {/* 한 문장 voice 질문 */}
+      {/* 한 문장 voice 질문 — "어떻게" italic celadon 강조 (DESIGN.md 184줄 패턴) */}
       <View style={{ marginBottom: spacing['3xl'] }}>
-        <VoiceBlock>오늘은 어디 가고 싶으세요?</VoiceBlock>
+        <VoiceBlock>
+          <Text
+            style={{
+              fontFamily: fonts.family.voice,
+              fontSize: fonts.size.h1,
+              lineHeight: fonts.size.h1 * fonts.lineHeight.voice,
+              color: lightColors.text,
+            }}
+          >
+            오늘은{' '}
+            <Text
+              style={{
+                fontFamily: fonts.family.numeric,
+                fontStyle: 'italic',
+                color: lightColors.celadon,
+              }}
+            >
+              어떻게
+            </Text>
+            {'\n'}보내고 싶으세요?
+          </Text>
+        </VoiceBlock>
       </View>
 
       {/* 다음 여행 — Phase 2: 빈 상태만 */}
@@ -133,11 +170,12 @@ export default function Home() {
         <NextTripBlock />
       </View>
 
-      {/* 4 quick action — 잉크 점 자유 좌표 (그리드 X · 비대칭 배치) */}
+      {/* 4 quick action — 잉크 점 자유 좌표 (그리드 X · 비대칭 배치) + 라벨 + 설명 */}
       <View style={{ flex: 1 }}>
         <QuickAction
           href="/plan/new"
           label="일정 시작"
+          description="처음부터 동행과 함께"
           dotSize={12}
           align="left"
           offsetTop={spacing.sm}
@@ -145,14 +183,23 @@ export default function Home() {
         <QuickAction
           href="/companion"
           label="현장 컴패니언"
+          description="옆에서 같이 보기"
           dotSize={10}
           align="right"
           offsetTop={spacing.lg}
         />
-        <QuickAction href="/talk" label="대화" dotSize={11} align="left" offsetTop={spacing.xl} />
+        <QuickAction
+          href="/talk"
+          label="대화"
+          description="음성·일기로 이야기"
+          dotSize={11}
+          align="left"
+          offsetTop={spacing.xl}
+        />
         <QuickAction
           href="/profile"
           label="내 결"
+          description="취향과 지난 여행"
           dotSize={8}
           align="center"
           offsetTop={spacing.lg}
