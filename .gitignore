@@ -6,6 +6,9 @@ node_modules/
 # Bun
 .bun-cache/
 
+# Harness 작업용 (guards 보고서 등)
+_workspace/
+
 # Turborepo
 .turbo/
 
