@@ -1,0 +1,27 @@
+# Phase 3.5 (D22) — promptfoo eval config (reference).
+#
+# 주의: monorepo hoist 충돌 (entities/parse5) 로 `bunx promptfoo` 직접 실행은
+# 현재 동작 X. 대신 자체 bun eval script (`bun run eval`) 가 같은 assertion
+# 으로직을 적용. 이 yaml 은 Phase 4-5 promptfoo 정식 통합 시 baseline reference.
+#
+# 동등 효과: backend/server/eval/recommend-{cities,pois}.eval.ts (자체 구현).
+
+description: 동행 LLM 함수 친구 톤 baseline lock
+
+providers:
+  - id: http
+    config:
+      url: http://localhost:3000/api/llm/cities
+      method: POST
+      headers:
+        Content-Type: application/json
+      body: '{"userStyle": {"tags": {{tags | dump}}, "likedPoiIds": [], "dislikedPoiIds": []}, "utterance": "{{utterance}}"}'
+
+# 케이스 정의는 recommend-cities.eval.ts / recommend-pois.eval.ts 안에.
+# (TypeScript 가 KOREAN_CITY_WHITELIST 같은 server 상수에 직접 접근하기 더 단순.)
+
+defaultTest:
+  assert:
+    - type: is-json
+    - type: not-contains-any
+      value: ['추천드립니다', '입니다.', '습니다.']  # 격식 X — 친구 톤 lock

@@ -7,11 +7,15 @@
     "dev": "bun --hot src/index.ts",
     "start": "bun src/index.ts",
     "typecheck": "tsc --noEmit",
-    "test": "echo 'TODO: vitest (Day 2a)'"
+    "test": "echo 'TODO: vitest (Day 2a)'",
+    "eval": "bun eval/recommend-cities.eval.ts && bun eval/recommend-pois.eval.ts",
+    "eval:cities": "bun eval/recommend-cities.eval.ts",
+    "eval:pois": "bun eval/recommend-pois.eval.ts"
   },
   "dependencies": {
     "@trip/types": "workspace:*",
-    "hono": "^4.6.13"
+    "hono": "^4.6.13",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/bun": "^1.1.14"
