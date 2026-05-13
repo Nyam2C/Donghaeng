@@ -25,11 +25,17 @@ export const apiBaseUrl: string = process.env.EXPO_PUBLIC_API ?? 'http://localho
 const USE_MOCKS = process.env.EXPO_PUBLIC_USE_MOCKS === 'true'
 
 /**
- * path 에서 query string 제거 — fixture lookup key 는 path 만 (`/poi/search?q=...` → `/poi/search`)
+ * Mock fixture lookup key 정규화.
+ *  - query string 제거 (`/api/poi/search?q=...` → `/api/poi/search`)
+ *  - `/api` prefix 제거 (server mount `/api/poi` 와 fixture key `/poi/...` 가 다른 컨벤션 통일)
+ *
+ * caller 는 항상 server 실제 path (`/api/poi/search` 형태) 로 호출. real fetch 는 그대로,
+ * mock lookup 만 `/api` 떼고 `/poi/search` 로 본다.
  */
 function normalizePath(path: string): string {
   const qIdx = path.indexOf('?')
-  return qIdx === -1 ? path : path.slice(0, qIdx)
+  const noQuery = qIdx === -1 ? path : path.slice(0, qIdx)
+  return noQuery.startsWith('/api/') ? noQuery.slice(4) : noQuery
 }
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {

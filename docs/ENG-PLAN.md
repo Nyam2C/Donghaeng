@@ -1024,10 +1024,11 @@ GET  /health            → { "ok": true }
 | 2026-05-13 | **D13: 하네스 구축 — agent team 자동화 + D12 가드** | Phase 1 마무리 시점에 `.claude/agents/` 5개 + `.claude/skills/` 3개 박음. agents: lane-frontend · lane-backend · lane-tts · design-guard · scaffold-guard (모두 model: opus). skills: phase-cycle (오케스트레이터) · scaffold-spawn (Lane team spawn 패턴) · eng-plan-keeper (Decisions Log 갱신). Phase 2-7 매 phase 마다 `phase-cycle` 호출로 *원테이크 → 검증 → guards → commit → CI → 머지* 통합. design-guard 가 DESIGN.md 위반 (금지 폰트 · hex 색 · 거품 radius · UI 이모지) 자동 감지, scaffold-guard 가 D12 freeze 위반 + signature 변경 영향 분석. CLAUDE.md 에 하네스 포인터 + 변경 이력 등록 |
 | 2026-05-13 | **D14: 탭바 3 탭 + talk push route (v1)** | v1 탭바 = `홈 · 여행 · 나`. DESIGN.md 240줄의 "대화" 탭은 v2 보류. `app/talk.tsx` 는 `(tabs)/` 밖 stack route 유지, talk 진입 시 탭바 자동 hide (Expo Router 기본). 사유: scaffold-freeze 후 talk 을 `(tabs)/` 안으로 이동 = freeze 위반 + 다수 import 경로 갱신 비용 > "대화" 탭 분리 가치 (v1엔 진입 빈도 검증 X). 홈의 4 quick action 중 "대화" 진입점 박아 동등 효과 확보. Phase 5 (TTS) 에서 음성 진입 시 탭바 hide 패턴 실측. DESIGN.md line 240-249 갱신은 Phase 7 마무리 정리 시 |
 | 2026-05-13 | **D15: 권한 prompt lazy 트리거** | Location · Mic · Speech 권한은 lazy 패턴. `app/_layout.tsx` 에 권한 prompt 코드 박지 않음. services 첫 사용 시 요청 — Location 은 `services/location.ts` getCurrentGps() / Mic·Speech 는 `services/audio.ts` · `services/intent.ts` 첫 호출 시. 사유: Apple HIG 권장 + 앱 진입 시 권한 폭격 = 거절률↑ + "친구 옆 리듬" 명제 정면 위배. Shell A 온보딩 미구현이라 진입점이 홈인 v1 특수성도 반영. Phase 2 ENG-PLAN line 581 명세 ("`app/_layout.tsx` — 권한 prompt") 는 lazy 패턴으로 재해석. Phase 6 본인 검증의 권한 흐름 체크리스트 (line 590) 그대로 유지 |
+| 2026-05-13 | **D18: backend/server/Dockerfile base alpine → debian (Phase 3 활성화)** | Phase 3 에서 D9-b 의 `claude` CLI spawn 을 컨테이너 안에서 실제 가동하기 위해 `oven/bun:1-alpine` → `oven/bun:1` (debian) 로 base 교체. claude-code-linux-x64 가 glibc 동적 링크 native binary 라 alpine (musl) 비호환. `gcompat` 시도 시 ELF relocation type 37 (GNU ifunc) 미지원으로 fail. debian 전환 후 claude CLI 2.1.140 컨테이너 내 정상 동작 확인 (host `~/.claude` bind mount + OAuth 즉시 인증). 이미지 사이즈 ~30MB → ~200MB 수용. apt 로 curl 설치 (healthcheck). Phase 3 통합 smoke test 에서 SSE stream `event: final` 의 recommended_ids 실응답 검증 + D2 hallucination guard 동작 (`hallucinationDetected: false`) |
 
 ---
 
-**Status: APPROVED + Phase 2 완료 (2026-05-13, D1-D15 반영) — Phase 3 (간단 일정, Day 7-8) 시작 가능. feat/shell 브랜치 push 완료 (commit e7a2003), PR 생성 대기. 잔여 ~3.6주.**
+**Status: APPROVED + Phase 3 완료 (2026-05-13, D1-D18 반영) — Phase 3 (간단 일정 시작 · Day 7-8) 완료. Lane F (intake UI) + Lane B (Kakao proxy + Claude CLI spawn D2) + Lane T (readiness only) 병렬. Kakao Local API 실응답 통합 + Claude CLI 실 streaming + D2 hallucination guard 검증 (`hallucinationDetected: false`). 다음 Phase 4 (현장 컴패니언, Day 9-14) 대기. 잔여 ~3.4주.**
 
 ---
 
@@ -1036,7 +1037,7 @@ GET  /health            → { "ok": true }
 | Review | Trigger | Why | Runs | Status | Findings |
 |--------|---------|-----|------|--------|----------|
 | CEO Review | `/plan-ceo-review` | Scope & strategy | 0 | — | (안 함, /office-hours로 대체) |
-| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 2 | **CLEAR (PLAN)** + Phase 1-2 완료 | 2차 리뷰: 15 decisions (D1-D15) 완료. Phase 1 (Day 1-3) + Phase 2 (Shell, Day 5-6) 실행 끝, CI green, scaffold-freeze tag 박힘. phase-cycle 하네스 첫 실측 — Lane F 단일 spawn → typecheck/lint/docker/guards 자동 → commit/push 검증됨 |
+| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 3 | **CLEAR (PLAN)** + Phase 1-3 완료 | 3차 리뷰: 16 decisions (D1-D15 + D18) 완료. Phase 1-3 (Day 1-8) 실행 끝, CI green, scaffold-freeze tag 유지. phase-cycle 하네스 — Phase 2 Lane F 단일 + Phase 3 Lane F+B+T 병렬 spawn 검증됨. D2 hallucination guard 실 LLM 응답에서 동작 확인 |
 | Design Review | `/plan-design-review` | UI/UX gaps | 0 | — | 권장 (4 화면 코딩 시작 전) |
 | Codex Review | `/codex review` | Independent 2nd opinion | 0 | — | 권장 (코딩 후) |
 
@@ -1048,9 +1049,9 @@ GET  /health            → { "ok": true }
 
 **UNRESOLVED:** 2 (production hosting + production LLM provider — Phase 7 결정)
 
-**VERDICT:** ENG CLEARED (2nd, D9-D15) — Phase 1 + Phase 2 실행 완료. phase-cycle 하네스 첫 실측 — Lane F 단일 spawn → typecheck/lint/docker/guards 자동 → commit/push 일관 흐름 검증됨. **Phase 3 (간단 일정)** 부터 Lane F + Lane B 병렬.
+**VERDICT:** ENG CLEARED (3rd, D9-D18) — Phase 1-3 실행 완료. Lane F+B+T 병렬 spawn 성공, design-guard/scaffold-guard CLEAN, D2 strict 실 LLM 응답에서 동작. Dockerfile base 변경 (D18) 으로 Claude CLI 컨테이너 동작 확보. **Phase 4 (현장 컴패니언 · 카드 뷰, Day 9-14)** 시작 가능.
 
-**D9-D15 추가사항:**
+**D9-D18 추가사항:**
 - Tech Stack: **Turborepo** + bun workspaces + Docker Compose + Expo Web + **husky 9 + GitHub Actions** (D11 Day 2b 중 simple-git-hooks → husky 교체)
 - File Structure: **`frontend/mobile-web/` + `backend/{server, ai-tts}/` + `shared/types/` + `.github/workflows/` + `.claude/{agents,skills}/`** (frontend/backend 분류 + CI/CD + 하네스)
 - Architecture: docker-compose는 backend 전용 (server + ai-tts). frontend는 host metro
@@ -1062,3 +1063,5 @@ GET  /health            → { "ok": true }
 - Worktree Parallelization: 3 lane (mobile-web · server · ai-tts) — D13 하네스로 자동 spawn
 - TODOs (Phase 7 시점): Production hosting · Production LLM provider · Naver Clova Voice (Edge TTS → Clova 교체) · Apple Developer 계정 · Turbo Remote Cache
 - **Phase 2 (Shell) 완료** (2026-05-13): 5 stub (`app/_layout.tsx` · `app/(tabs)/_layout.tsx` · `app/(tabs)/home.tsx` · `components/ink-mark.tsx` · `components/voice-block.tsx`) 채움. 잉크 마크 4초 호흡 (reanimated v3) + ReduceMotion 정지. 3 탭 (홈·여행·나) + 인라인 SVG line-art 아이콘. 음성 모먼트 위/아래 64px breathing (DESIGN.md 125줄). 검증 all clean (typecheck 3/3 · lint 79 clean · docker server/tts 200 · design-guard CRITICAL 0 · scaffold-guard CLEAN). D14 (탭바 3 탭) + D15 (권한 lazy) 추가. manual UX 잔여: 디바이스에서 폰트 family 키 mismatch (NotoSerifKR vs NotoSerifKR_400Regular) fallback 여부 확인 필요
+- **Phase 3 (간단 일정 시작) 완료** (2026-05-13): Lane F (intake UI + 결 태그 + poi/llm-orchestrator client) + Lane B (Kakao proxy + Claude CLI spawn SSE + D2 strict) + Lane T (readiness only, 코드 변경 0) 병렬 spawn. 6 stub body 채움 (`app/plan/new.tsx` · `components/tag-chip.tsx` · `services/poi.ts` · `services/companion/llm-orchestrator.ts` · `services/api-client.ts` (normalizePath 내부) · `services/__mocks__/api/llm.json` (fixture id 정합)) + 2 backend route (`routes/poi.ts` Kakao Local API 프록시 · `routes/llm.ts` Claude CLI spawn + SSE + D2 검증). 인프라: D18 (Dockerfile base alpine→debian) 로 claude CLI 컨테이너 가동. 통합 검증: Kakao `/api/poi/search?q=강남역` 실 15 POI 응답 + `/api/llm` SSE stream `event: start → raw → final → done` + `hallucinationDetected: false` + 친구 톤 멘트 ("조용한 분위기 찾는다면 한옥 찻집이 딱이야..."). guards CLEAN (design-guard CRITICAL 0 · scaffold-guard freeze 위반 0, TagChip `onPress?` 옵셔널 추가만 LOW). 회고: `TagChipProps.onPress?` 옵셔널 추가 (D12 freeze 위반 X, caller 0 영향) + `api-client.normalizePath` 의 `/api/` prefix strip 내부 룰 (export 시그니처 무변경). manual UX 잔여: 디바이스에서 3 input 흐름 + 첫 LLM 멘트 음성 인용 패턴 확인 필요
+- **Lane T readiness 보고** (Phase 5a 대비): edge-tts 6.1.18 + ko-KR-SunHiNeural 가용 확인 (컨테이너 내 검증) + ai-tts 컨테이너 healthy + 추가 의존성 0. 사용자 트래킹 필요: Naver Clova Voice 앱 승인 (1-3일 대기) — Phase 7 교체 대비, **Day 10 이전 신청 권장** (ENG-PLAN line 937)

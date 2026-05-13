@@ -1,9 +1,10 @@
-FROM oven/bun:1-alpine
+FROM oven/bun:1
 
 WORKDIR /app
 
-# Healthcheck용 curl
-RUN apk add --no-cache curl
+# Healthcheck용 curl (debian 기반 — claude-code glibc binary 직접 실행 가능)
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+  && rm -rf /var/lib/apt/lists/*
 
 # Workspace 구조 복사 (bun workspaces hoist)
 COPY package.json bun.lock ./
@@ -24,8 +25,8 @@ WORKDIR /app/backend/server
 
 EXPOSE 3000
 
-# Phase 3+ : Claude Code CLI 설치 추가
-# RUN bun add -g @anthropic-ai/claude-code
+# Phase 3 활성화: Claude Code CLI — D2 hallucination guard용 spawn 대상
 # 인증은 호스트 ~/.claude bind mount (docker-compose.yml volumes)
+RUN bun add -g @anthropic-ai/claude-code
 
 CMD ["bun", "--hot", "src/index.ts"]
