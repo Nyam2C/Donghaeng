@@ -16,3 +16,22 @@ declare namespace NodeJS {
 declare const process: {
   env: NodeJS.ProcessEnv
 }
+
+/**
+ * RN-web 호환 — ViewProps · TextProps 에 className 추가.
+ *
+ * react-native-web 이 className 을 CSS class 로 처리. native 에선 무시.
+ * Onboarding entrance (app/index.tsx) 의 @keyframes class 매핑에 필요.
+ */
+import 'react-native'
+declare module 'react-native' {
+  interface ViewProps {
+    className?: string
+  }
+  interface TextProps {
+    className?: string
+  }
+  interface PressableProps {
+    className?: string
+  }
+}

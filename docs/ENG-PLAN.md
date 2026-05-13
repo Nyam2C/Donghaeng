@@ -1022,10 +1022,12 @@ GET  /health            → { "ok": true }
 | 2026-05-12 | **D11: Pre-commit + CI/CD (GitHub Actions)** | Pre-commit: 초기 simple-git-hooks 시도 → bun `.bun/<pkg>@<ver>/` postinstall 호환 X (Day 2b CI fail) → **husky 9 + lint-staged**로 교체 (2026-05-13). 변경 파일만 Biome check + tsc --noEmit. CI: turbo lint/typecheck + docker buildx cache. Turbo Remote Cache는 Vercel token 추후. CD: 모바일 EAS Update PR preview + main → TestFlight. 백엔드 GHCR docker image push. Phase 1 +0.5일 |
 | 2026-05-12 | **D12: 원테이크 워크플로 (Scaffold Day + 인터페이스 freeze)** | Phase 1 Day 3을 Scaffold Day로. 모든 폴더/파일 stub + shared/types/ + 서비스 함수 시그니처 + Zustand store 골격 미리 생성. Phase 2-7은 *stub 채우기만* — 파일 추가/이동/구조 변경 금지. 매 Phase 끝에 `원테이크 → 확인 (typecheck+test+manual) → 리뷰 (PR+CI green)` 사이클. Interface Spec 섹션에 freeze 시그니처 박음. 새 D 결정 없이 구조 변경 X |
 | 2026-05-13 | **D13: 하네스 구축 — agent team 자동화 + D12 가드** | Phase 1 마무리 시점에 `.claude/agents/` 5개 + `.claude/skills/` 3개 박음. agents: lane-frontend · lane-backend · lane-tts · design-guard · scaffold-guard (모두 model: opus). skills: phase-cycle (오케스트레이터) · scaffold-spawn (Lane team spawn 패턴) · eng-plan-keeper (Decisions Log 갱신). Phase 2-7 매 phase 마다 `phase-cycle` 호출로 *원테이크 → 검증 → guards → commit → CI → 머지* 통합. design-guard 가 DESIGN.md 위반 (금지 폰트 · hex 색 · 거품 radius · UI 이모지) 자동 감지, scaffold-guard 가 D12 freeze 위반 + signature 변경 영향 분석. CLAUDE.md 에 하네스 포인터 + 변경 이력 등록 |
+| 2026-05-13 | **D14: 탭바 3 탭 + talk push route (v1)** | v1 탭바 = `홈 · 여행 · 나`. DESIGN.md 240줄의 "대화" 탭은 v2 보류. `app/talk.tsx` 는 `(tabs)/` 밖 stack route 유지, talk 진입 시 탭바 자동 hide (Expo Router 기본). 사유: scaffold-freeze 후 talk 을 `(tabs)/` 안으로 이동 = freeze 위반 + 다수 import 경로 갱신 비용 > "대화" 탭 분리 가치 (v1엔 진입 빈도 검증 X). 홈의 4 quick action 중 "대화" 진입점 박아 동등 효과 확보. Phase 5 (TTS) 에서 음성 진입 시 탭바 hide 패턴 실측. DESIGN.md line 240-249 갱신은 Phase 7 마무리 정리 시 |
+| 2026-05-13 | **D15: 권한 prompt lazy 트리거** | Location · Mic · Speech 권한은 lazy 패턴. `app/_layout.tsx` 에 권한 prompt 코드 박지 않음. services 첫 사용 시 요청 — Location 은 `services/location.ts` getCurrentGps() / Mic·Speech 는 `services/audio.ts` · `services/intent.ts` 첫 호출 시. 사유: Apple HIG 권장 + 앱 진입 시 권한 폭격 = 거절률↑ + "친구 옆 리듬" 명제 정면 위배. Shell A 온보딩 미구현이라 진입점이 홈인 v1 특수성도 반영. Phase 2 ENG-PLAN line 581 명세 ("`app/_layout.tsx` — 권한 prompt") 는 lazy 패턴으로 재해석. Phase 6 본인 검증의 권한 흐름 체크리스트 (line 590) 그대로 유지 |
 
 ---
 
-**Status: APPROVED + Phase 1 완료 (2026-05-13, D1-D13 반영, 하네스 박힘) — Phase 2 (Shell, Day 5-6) 시작 가능. PR #1 머지 대기. 잔여 ~3.8주.**
+**Status: APPROVED + Phase 2 완료 (2026-05-13, D1-D15 반영) — Phase 3 (간단 일정, Day 7-8) 시작 가능. feat/shell 브랜치 push 완료 (commit e7a2003), PR 생성 대기. 잔여 ~3.6주.**
 
 ---
 
@@ -1034,7 +1036,7 @@ GET  /health            → { "ok": true }
 | Review | Trigger | Why | Runs | Status | Findings |
 |--------|---------|-----|------|--------|----------|
 | CEO Review | `/plan-ceo-review` | Scope & strategy | 0 | — | (안 함, /office-hours로 대체) |
-| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 2 | **CLEAR (PLAN)** + Phase 1 완료 | 2차 리뷰: 13 decisions (D1-D13) 완료. Phase 1 (Day 1-3) 실행 끝, CI green, scaffold-freeze tag 박힘. D13 하네스 (5 agents + 3 skills) Phase 2-7 자동화 준비 |
+| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 2 | **CLEAR (PLAN)** + Phase 1-2 완료 | 2차 리뷰: 15 decisions (D1-D15) 완료. Phase 1 (Day 1-3) + Phase 2 (Shell, Day 5-6) 실행 끝, CI green, scaffold-freeze tag 박힘. phase-cycle 하네스 첫 실측 — Lane F 단일 spawn → typecheck/lint/docker/guards 자동 → commit/push 검증됨 |
 | Design Review | `/plan-design-review` | UI/UX gaps | 0 | — | 권장 (4 화면 코딩 시작 전) |
 | Codex Review | `/codex review` | Independent 2nd opinion | 0 | — | 권장 (코딩 후) |
 
@@ -1046,9 +1048,9 @@ GET  /health            → { "ok": true }
 
 **UNRESOLVED:** 2 (production hosting + production LLM provider — Phase 7 결정)
 
-**VERDICT:** ENG CLEARED (2nd, D9-D13) — Phase 1 실행 완료 (Day 1-3 + 하네스). PR #1 머지 대기. **Phase 2 (Shell)** 부터는 `phase-cycle` 하네스 트리거로 진행.
+**VERDICT:** ENG CLEARED (2nd, D9-D15) — Phase 1 + Phase 2 실행 완료. phase-cycle 하네스 첫 실측 — Lane F 단일 spawn → typecheck/lint/docker/guards 자동 → commit/push 일관 흐름 검증됨. **Phase 3 (간단 일정)** 부터 Lane F + Lane B 병렬.
 
-**D9-D13 추가사항:**
+**D9-D15 추가사항:**
 - Tech Stack: **Turborepo** + bun workspaces + Docker Compose + Expo Web + **husky 9 + GitHub Actions** (D11 Day 2b 중 simple-git-hooks → husky 교체)
 - File Structure: **`frontend/mobile-web/` + `backend/{server, ai-tts}/` + `shared/types/` + `.github/workflows/` + `.claude/{agents,skills}/`** (frontend/backend 분류 + CI/CD + 하네스)
 - Architecture: docker-compose는 backend 전용 (server + ai-tts). frontend는 host metro
@@ -1059,3 +1061,4 @@ GET  /health            → { "ok": true }
 - Phase 1 실측: Day 1-3 + 하네스 = 1.5일 (집중 작업). 총 잔여 ~3.8주 (Phase 2-7)
 - Worktree Parallelization: 3 lane (mobile-web · server · ai-tts) — D13 하네스로 자동 spawn
 - TODOs (Phase 7 시점): Production hosting · Production LLM provider · Naver Clova Voice (Edge TTS → Clova 교체) · Apple Developer 계정 · Turbo Remote Cache
+- **Phase 2 (Shell) 완료** (2026-05-13): 5 stub (`app/_layout.tsx` · `app/(tabs)/_layout.tsx` · `app/(tabs)/home.tsx` · `components/ink-mark.tsx` · `components/voice-block.tsx`) 채움. 잉크 마크 4초 호흡 (reanimated v3) + ReduceMotion 정지. 3 탭 (홈·여행·나) + 인라인 SVG line-art 아이콘. 음성 모먼트 위/아래 64px breathing (DESIGN.md 125줄). 검증 all clean (typecheck 3/3 · lint 79 clean · docker server/tts 200 · design-guard CRITICAL 0 · scaffold-guard CLEAN). D14 (탭바 3 탭) + D15 (권한 lazy) 추가. manual UX 잔여: 디바이스에서 폰트 family 키 mismatch (NotoSerifKR vs NotoSerifKR_400Regular) fallback 여부 확인 필요
