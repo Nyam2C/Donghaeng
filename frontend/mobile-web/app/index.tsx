@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
 import { useEffect, useState } from 'react'
-import { AccessibilityInfo, Pressable, Text, View } from 'react-native'
+import { AccessibilityInfo, Platform, Pressable, Text, View } from 'react-native'
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -67,9 +67,13 @@ function useFadeUp(delayMs: number, reduceMotion: boolean) {
 }
 
 export default function Onboarding() {
-  const [reduceMotion, setReduceMotion] = useState(false)
+  // web 은 reanimated 의 withDelay+withTiming 초기값 0 stuck 회피 위해 reduceMotion=true.
+  // DESIGN.md prefers-reduced-motion 명세와 정합 (모든 stagger·pulse 비활성, 호흡 유지).
+  // native (Expo Go) 는 AccessibilityInfo 기반 정상 entrance.
+  const [reduceMotion, setReduceMotion] = useState(Platform.OS === 'web')
 
   useEffect(() => {
+    if (Platform.OS === 'web') return
     let mounted = true
     AccessibilityInfo.isReduceMotionEnabled().then((v) => {
       if (mounted) setReduceMotion(v)
