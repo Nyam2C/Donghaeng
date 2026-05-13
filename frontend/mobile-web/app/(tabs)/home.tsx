@@ -1,38 +1,49 @@
+import { LinearGradient } from 'expo-linear-gradient'
 import { Link } from 'expo-router'
-import type { ReactNode } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { InkMark } from '@/components/ink-mark'
-import { VoiceBlock } from '@/components/voice-block'
 import { lightColors } from '@/theme'
 import * as fonts from '@/theme/fonts'
-import { spacing } from '@/theme/spacing'
+import { radius, spacing } from '@/theme/spacing'
 
 /**
- * Home — Shell B (DESIGN.md 라인 230-249)
+ * Home — Shell B (docs/design-preview.html 의 SHELL B 그대로 RN 변환)
  *
- *  - 좌상단 24px 잉크 마크 (호흡 ON)
- *  - 한 문장 voice 질문 (Noto Serif KR · 22px · 좌측 청자 보더)
- *  - 다음 여행: Phase 2 엔 trip store 미연결 → 빈 상태만 렌더 (D14 결정)
- *  - 4 quick action: 잉크 점(8-12px) + 라벨, 자유 좌표 (그리드 X)
- *  - hit area 44×44 최소 (padding 으로 확장)
- *  - ambient 알림 슬롯은 layout 만, 빈 상태 ok
+ *  - greet (잉크 마크 + 이름) + home-meta (날짜/날씨) + home-heading (em italic celadon)
+ *  - next-trip (celadon-tint 카드 + 그라데이션 썸네일 + Fraunces italic count)
+ *  - quick-grid (2x2 카드 · 잉크 점 + 라벨 + desc)
+ *  - ambient (잉크 마크 + 명조 메시지 + em italic celadon)
  *
- * 권한 prompt 코드 박지 않음 (D15 — Phase 3-5 services 에서 lazy)
+ * dummy 값 (사용자 이름/날씨/다음 여행/ambient) 은 Phase 3-5 에 store
+ * (user-style · weather · trip · alert-queue) 연결 시 실제 데이터로 교체.
  */
+
+// DESIGN.md 92줄 토큰 — theme/colors.ts 가 freeze 라 inline
+const celadonTint = 'rgba(74, 111, 165, 0.08)'
+
+type Dot = { size: 'sm' | 'md' | 'lg'; color?: string; opacity?: number }
 
 type QuickActionProps = {
   href: string
   label: string
   description: string
-  dotSize: number
-  align: 'left' | 'center' | 'right'
-  offsetTop: number
+  dots: Dot[]
 }
 
-function QuickAction({ href, label, description, dotSize, align, offsetTop }: QuickActionProps) {
-  const justify = align === 'left' ? 'flex-start' : align === 'right' ? 'flex-end' : 'center'
+function dotPx(s: Dot['size']) {
+  return s === 'lg' ? 14 : s === 'sm' ? 6 : 10
+}
+
+function dotOpacity(d: Dot) {
+  if (d.opacity !== undefined) return d.opacity
+  if (d.size === 'sm') return 0.55
+  if (d.size === 'lg') return 1
+  return 0.85
+}
+
+function QuickAction({ href, label, description, dots }: QuickActionProps) {
   return (
     <Link href={href as never} asChild>
       <Pressable
@@ -40,73 +51,52 @@ function QuickAction({ href, label, description, dotSize, align, offsetTop }: Qu
         accessibilityLabel={label}
         accessibilityHint={description}
         style={{
-          marginTop: offsetTop,
-          alignSelf:
-            justify === 'flex-start'
-              ? 'flex-start'
-              : justify === 'flex-end'
-                ? 'flex-end'
-                : 'center',
-          minHeight: 44,
-          minWidth: 44,
-          paddingVertical: spacing.sm + spacing.xs, // 12
-          paddingHorizontal: spacing.md, // 16
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: spacing.sm + spacing.xs, // 12
+          flex: 1,
+          minHeight: 84,
+          padding: 14,
+          backgroundColor: lightColors.bg,
+          borderRadius: radius.card,
+          borderWidth: 1,
+          borderColor: lightColors.line,
+          gap: 10,
         }}
       >
-        <View
-          style={{
-            width: dotSize,
-            height: dotSize,
-            borderRadius: dotSize / 2,
-            backgroundColor: lightColors.celadon,
-            opacity: 0.88,
-            marginTop: 2,
-          }}
-        />
-        <View style={{ flexShrink: 1 }}>
-          <Text
-            style={{
-              fontFamily: fonts.family.ui,
-              fontSize: fonts.size.body,
-              lineHeight: fonts.size.body * fonts.lineHeight.body,
-              color: lightColors.text,
-            }}
-          >
-            {label}
-          </Text>
-          <Text
-            style={{
-              fontFamily: fonts.family.ui,
-              fontSize: fonts.size.caption,
-              lineHeight: fonts.size.caption * fonts.lineHeight.caption,
-              color: lightColors.textSoft,
-              marginTop: 2,
-            }}
-          >
-            {description}
-          </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+          {dots.map((d, i) => (
+            <View
+              key={`${d.size}-${d.color ?? 'c'}-${i}`}
+              style={{
+                width: dotPx(d.size),
+                height: dotPx(d.size),
+                borderRadius: 999,
+                backgroundColor: d.color ?? lightColors.celadon,
+                opacity: dotOpacity(d),
+              }}
+            />
+          ))}
         </View>
+        <Text
+          style={{
+            fontFamily: fonts.family.voice,
+            fontSize: 14,
+            fontWeight: '500',
+            color: lightColors.text,
+          }}
+        >
+          {label}
+        </Text>
+        <Text
+          style={{
+            fontSize: 10,
+            color: lightColors.textSoft,
+            lineHeight: 10 * 1.5,
+            fontFamily: fonts.family.ui,
+          }}
+        >
+          {description}
+        </Text>
       </Pressable>
     </Link>
-  )
-}
-
-function NextTripBlock(): ReactNode {
-  // Phase 2: trip store 연결 X — 빈 상태만 렌더
-  return (
-    <Text
-      style={{
-        fontFamily: fonts.family.ui,
-        fontSize: fonts.size.body,
-        lineHeight: fonts.size.body * fonts.lineHeight.body,
-        color: lightColors.textMuted,
-      }}
-    >
-      아직 계획 없어요
-    </Text>
   )
 }
 
@@ -114,100 +104,211 @@ export default function Home() {
   const insets = useSafeAreaInsets()
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: lightColors.bg,
-        paddingTop: insets.top + spacing.lg,
+    <ScrollView
+      style={{ flex: 1, backgroundColor: lightColors.bgElev }}
+      contentContainerStyle={{
+        paddingTop: insets.top + spacing.sm,
         paddingHorizontal: spacing.lg,
-        paddingBottom: spacing.xl,
+        paddingBottom: spacing.md,
       }}
+      showsVerticalScrollIndicator={false}
     >
-      {/* 좌상단 잉크 마크 — 24px · 호흡 ON */}
-      <View style={{ alignSelf: 'flex-start', marginBottom: spacing['3xl'] }}>
+      {/* greet — 잉크 마크 + 이름 */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 10,
+          marginTop: 14,
+        }}
+      >
         <InkMark size={24} glow="normal" />
+        <Text
+          style={{
+            fontSize: 14,
+            color: lightColors.textMuted,
+            fontFamily: fonts.family.ui,
+          }}
+        >
+          윤서님
+        </Text>
       </View>
 
-      {/* 한 문장 voice 질문 — "어떻게" italic celadon 강조 (DESIGN.md 184줄 패턴) */}
-      <View style={{ marginBottom: spacing['3xl'] }}>
-        <VoiceBlock>
+      {/* home-meta — 날짜 · 날씨 (DM Mono · 11px · text-soft) */}
+      <Text
+        style={{
+          fontSize: 11,
+          color: lightColors.textSoft,
+          marginTop: spacing.xs,
+          marginBottom: spacing.sm,
+          fontFamily: fonts.family.mono,
+        }}
+      >
+        화요일 · 5월 12일 · 흐림 18°
+      </Text>
+
+      {/* home-heading — "오늘은 *어떻게* 보내고 싶으세요?" */}
+      <Text
+        style={{
+          fontFamily: fonts.family.voice,
+          fontSize: 24,
+          fontWeight: '500',
+          lineHeight: 24 * 1.4,
+          letterSpacing: -0.48,
+          marginTop: spacing.xs,
+          marginBottom: spacing.lg,
+          color: lightColors.text,
+        }}
+      >
+        오늘은{' '}
+        <Text
+          style={{
+            fontFamily: fonts.family.numeric,
+            fontStyle: 'italic',
+            color: lightColors.celadon,
+          }}
+        >
+          어떻게
+        </Text>
+        {'\n'}보내고 싶으세요?
+      </Text>
+
+      {/* next-trip — celadon-tint 카드 + gradient 썸네일 + Fraunces italic count */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 12,
+          padding: 14,
+          backgroundColor: celadonTint,
+          borderRadius: radius.cardLarge,
+          borderWidth: 1,
+          borderColor: lightColors.celadonSoft,
+          marginBottom: spacing.md,
+        }}
+      >
+        <LinearGradient
+          colors={[lightColors.amber, lightColors.juhong]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ width: 48, height: 48, borderRadius: 10 }}
+        />
+        <View style={{ flex: 1, minWidth: 0 }}>
           <Text
             style={{
               fontFamily: fonts.family.voice,
-              fontSize: fonts.size.h1,
-              lineHeight: fonts.size.h1 * fonts.lineHeight.voice,
+              fontSize: 15,
+              fontWeight: '500',
               color: lightColors.text,
             }}
           >
-            오늘은{' '}
-            <Text
-              style={{
-                fontFamily: fonts.family.numeric,
-                fontStyle: 'italic',
-                color: lightColors.celadon,
-              }}
-            >
-              어떻게
-            </Text>
-            {'\n'}보내고 싶으세요?
+            부산 · 2박 3일
           </Text>
-        </VoiceBlock>
-      </View>
-
-      {/* 다음 여행 — Phase 2: 빈 상태만 */}
-      <View style={{ marginBottom: spacing['2xl'] }}>
+          <Text
+            style={{
+              fontSize: 11,
+              color: lightColors.celadon,
+              fontFamily: fonts.family.mono,
+              marginTop: 2,
+            }}
+          >
+            5/24 출발 · KE 1837
+          </Text>
+        </View>
         <Text
           style={{
-            fontFamily: fonts.family.ui,
-            fontSize: fonts.size.caption,
-            lineHeight: fonts.size.caption * fonts.lineHeight.caption,
-            color: lightColors.textSoft,
-            marginBottom: spacing.sm,
+            fontFamily: fonts.family.numeric,
+            fontStyle: 'italic',
+            fontSize: 24,
+            color: lightColors.celadon,
           }}
         >
-          다음 여행
+          12
+          <Text
+            style={{
+              fontSize: 11,
+              fontFamily: fonts.family.mono,
+              fontStyle: 'normal',
+              opacity: 0.7,
+            }}
+          >
+            일 후
+          </Text>
         </Text>
-        <NextTripBlock />
       </View>
 
-      {/* 4 quick action — 잉크 점 자유 좌표 (그리드 X · 비대칭 배치) + 라벨 + 설명 */}
-      <View style={{ flex: 1 }}>
+      {/* quick-grid — 2x2 카드 */}
+      <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm }}>
         <QuickAction
           href="/plan/new"
-          label="일정 시작"
+          label="새로 짜기"
           description="처음부터 동행과 함께"
-          dotSize={12}
-          align="left"
-          offsetTop={spacing.sm}
-        />
-        <QuickAction
-          href="/companion"
-          label="현장 컴패니언"
-          description="옆에서 같이 보기"
-          dotSize={10}
-          align="right"
-          offsetTop={spacing.lg}
-        />
-        <QuickAction
-          href="/talk"
-          label="대화"
-          description="음성·일기로 이야기"
-          dotSize={11}
-          align="left"
-          offsetTop={spacing.xl}
+          dots={[{ size: 'lg' }, { size: 'sm' }]}
         />
         <QuickAction
           href="/profile"
-          label="내 결"
-          description="취향과 지난 여행"
-          dotSize={8}
-          align="center"
-          offsetTop={spacing.lg}
+          label="지난 여행"
+          description="12번의 동행"
+          dots={[{ size: 'md' }, { size: 'md' }, { size: 'sm' }]}
+        />
+      </View>
+      <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
+        <QuickAction
+          href="/profile"
+          label="내 패턴"
+          description="어디를 좋아하셨는지"
+          dots={[
+            { size: 'md', color: lightColors.moss },
+            { size: 'md', color: lightColors.amber },
+          ]}
+        />
+        <QuickAction
+          href="/companion"
+          label="지금 떠나기"
+          description="당일치기 · 즉시 제안"
+          dots={[{ size: 'lg', color: lightColors.juhong }]}
         />
       </View>
 
-      {/* ambient 알림 슬롯 — Phase 2: 빈 layout 만 */}
-      <View style={{ minHeight: spacing.xl }} />
-    </View>
+      {/* ambient — 잉크 마크 + 명조 메시지 + em italic celadon */}
+      <View
+        style={{
+          flexDirection: 'row',
+          gap: 10,
+          alignItems: 'flex-start',
+          padding: 12,
+          paddingHorizontal: 14,
+          backgroundColor: lightColors.bg,
+          borderRadius: radius.card,
+          borderWidth: 1,
+          borderColor: lightColors.line,
+          marginTop: spacing.sm,
+        }}
+      >
+        <View style={{ marginTop: 2 }}>
+          <InkMark size={20} glow="normal" />
+        </View>
+        <Text
+          style={{
+            flex: 1,
+            fontFamily: fonts.family.voice,
+            fontSize: 13,
+            lineHeight: 13 * 1.55,
+            color: lightColors.text,
+          }}
+        >
+          어제 강릉 정리해뒀어요.{' '}
+          <Text
+            style={{
+              color: lightColors.celadon,
+              fontStyle: 'italic',
+              fontFamily: fonts.family.numeric,
+            }}
+          >
+            한 번 봐주세요.
+          </Text>
+        </Text>
+      </View>
+    </ScrollView>
   )
 }
