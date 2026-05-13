@@ -20,4 +20,10 @@ config.resolver.nodeModulesPaths = [
 // 3. bun workspaces hoist 시 중복 symlink 방지
 config.resolver.disableHierarchicalLookup = true
 
+// 4. package.json `exports` 처리 + condition name 우선순위 (Phase 3 — D19 후보)
+// zustand 5.x esm middleware 가 `import.meta.env` 를 사용 → web bundle 에서 SyntaxError
+// `require` 를 first condition 으로 잡아 CJS 빌드 (`./middleware.js`) 선택
+config.resolver.unstable_enablePackageExports = true
+config.resolver.unstable_conditionNames = ['require', 'react-native', 'browser']
+
 module.exports = config
