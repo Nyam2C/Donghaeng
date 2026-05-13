@@ -40,7 +40,8 @@ export default function Root({ children }: PropsWithChildren) {
   )
 }
 
-// theme/fonts.family 토큰 키 → google fonts family name alias
+// theme/fonts.family 토큰 키 → google fonts family name alias + Onboarding entrance keyframes
+// (design-preview.html line 934-973 의 CSS animation 그대로)
 const fontAliases = `
 @font-face {
   font-family: 'NotoSerifKR';
@@ -71,4 +72,31 @@ const fontAliases = `
   font-display: swap;
 }
 body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+
+/* Onboarding entrance — design-preview.html 의 CSS animation */
+@keyframes onboard-mark-enter {
+  0%   { opacity: 0; transform: scale(0.7); }
+  60%  { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes onboard-fade-up {
+  0%   { opacity: 0; transform: translateY(14px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes onboard-cta-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(74, 111, 165, 0); }
+  50%      { box-shadow: 0 0 0 10px rgba(74, 111, 165, 0.10); }
+}
+@keyframes onboard-breathe-lg {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50%      { transform: scale(1.04); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboard-mark, .onboard-heading, .onboard-body, .onboard-cta, .onboard-link {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
 `
