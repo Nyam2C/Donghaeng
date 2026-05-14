@@ -1,0 +1,8 @@
+{
+  "city": "강릉",
+  "days": [
+    { "date": "2026-05-14", "tempC": 17, "condition": "cloudy", "rainProb": 20 },
+    { "date": "2026-05-15", "tempC": 14, "condition": "rainy", "rainProb": 80 },
+    { "date": "2026-05-16", "tempC": 19, "condition": "sunny", "rainProb": 0 }
+  ]
+}

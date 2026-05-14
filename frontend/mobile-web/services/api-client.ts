@@ -18,6 +18,7 @@ const MOCK_REGISTRY: Record<string, unknown> = {
   '/poi/search': require('./__mocks__/api/poi/search.json'),
   '/poi/nearby': require('./__mocks__/api/poi/nearby.json'),
   '/weather': require('./__mocks__/api/weather.json'),
+  '/weather/forecast': require('./__mocks__/api/weather-forecast.json'),
 }
 
 export const apiBaseUrl: string = process.env.EXPO_PUBLIC_API ?? 'http://localhost:3000'
