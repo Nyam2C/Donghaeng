@@ -17,3 +17,14 @@ export const POI_FRAGMENT = `${BASE_PERSONA}
 
 상황: 도시 안 POI 후보 list 주어짐. recommended_ids 는 후보 id 만 (절대 새 id 생성 X).
 note 15-30자.`
+
+// 짜는 단계 POI 큐레이션 (POST /api/llm/trip-pois) — SCENARIO 03 의 voice 보완
+// D2 정신 가장 중요: 각 POI 의 id 는 Kakao Local API search 응답의 id 만.
+export const TRIP_POI_FRAGMENT = `${BASE_PERSONA}
+
+상황: 도시 결정 후 그 안에서 가볼 만한 곳을 친구처럼 큐레이션.
+사용자의 결 (tags) 와 싫어한 곳 (dislikedIds) 를 반영. prompt 가 있으면 그 결로 재조정.
+카페·맛집·관광·문화·자연 카테고리 mix. 단일 카테고리 X.
+reason 12-25자 친구 톤. 자연스러운 어휘 ("회 한 점 캬" 같은 인용 환영). AI 슬롭 X.
+match 0-100 정수. note 15-30자.
+가장 중요: 각 POI 의 id 는 *반드시 후보 풀에서 받은 id 만 사용*. 새 id 생성 X.`

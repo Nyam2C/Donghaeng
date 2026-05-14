@@ -3,6 +3,8 @@ import type {
   KakaoPOI,
   LLMCityRecommendation,
   LLMRecommendation,
+  LLMTripPoiList,
+  TripPoiCandidate,
   UserStyle,
 } from '@trip/types'
 
@@ -238,5 +240,134 @@ export async function* streamCityRecommendation(
   }
 
   if (!finalRec) throw new Error('Cities LLM stream 끝났지만 final payload 없음')
+  yield { chunk: '', final: finalRec }
+}
+
+// ---------------------------------------------------------------------------
+// D29 — SCENARIO 03 POI 큐레이션 (LLMTripPoiList)
+// ---------------------------------------------------------------------------
+/**
+ * SCENARIO 03 의 POI 큐레이션 streamer.
+ *
+ * 입력 = 도시 + user 의 결 + 싫어요 history + 자유 발화 (재호출 시 "더 한적한 카페만" 등).
+ * 출력 = LLM 이 제시한 전체 pois (D29 의 "12 / 23" 의 23). Lane B 가 도시 in-area Kakao POI
+ * pool 을 사전 제공 → LLM 이 거기서 골라낸 결과를 받는다. D2 정신 적용 — id whitelist 검증.
+ *
+ * Wire format (USE_MOCKS=false 시 server `/api/llm/trip-pois` 응답):
+ *   SSE 표준 — `event: start → raw → final → done` (cities 와 동일 패턴)
+ *   final.data = LLMTripPoiList
+ *
+ * USE_MOCKS=true 또는 Lane B 미완성 (404/5xx) 시:
+ *   fixture 즉시 final 반환 (강릉 8 POI 가정, design-preview SCENARIO 03 톤 일치)
+ */
+
+const TRIP_POI_FALLBACK_FIXTURE: LLMTripPoiList = {
+  pois: [
+    {
+      id: 'fallback_001',
+      name: '안목 해변 커피거리',
+      category: '카페 · 오션뷰',
+      reason: '바다 보면서 진한 커피 한 잔',
+      match: 95,
+    },
+    {
+      id: 'fallback_002',
+      name: '정동진 일출',
+      category: '새벽 · 5:42 일출',
+      reason: '하루를 길게 시작하는 결',
+      match: 92,
+    },
+    {
+      id: 'fallback_003',
+      name: '사천진리 책방',
+      category: '독립서점 · 조용',
+      reason: '책 한 권 골라서 차 한 잔',
+      match: 88,
+    },
+    {
+      id: 'fallback_004',
+      name: '경포대',
+      category: '호수 산책',
+      reason: '천천히 걷기 좋아요',
+      match: 84,
+    },
+    {
+      id: 'fallback_005',
+      name: '강릉 중앙시장',
+      category: '먹거리 · 늦은 점심',
+      reason: '국밥 한 그릇, 시장 구경',
+      match: 82,
+    },
+  ],
+  note: '이 안에서 가볼 만한 곳들이에요',
+}
+
+export interface TripPoiOrchestratorInput {
+  city: string
+  userStyle: UserStyle
+  dislikedIds?: string[]
+  prompt?: string
+}
+
+/** SSE event.data 가 LLMTripPoiList shape 인지 검증 (D2 정신). */
+function validateTripPoiShape(raw: unknown): LLMTripPoiList | null {
+  if (!raw || typeof raw !== 'object') return null
+  const f = raw as Partial<LLMTripPoiList>
+  if (!Array.isArray(f.pois) || f.pois.length === 0) return null
+  if (typeof f.note !== 'string') return null
+  const valid = f.pois.every(
+    (p): p is TripPoiCandidate =>
+      !!p &&
+      typeof (p as TripPoiCandidate).id === 'string' &&
+      typeof (p as TripPoiCandidate).name === 'string' &&
+      typeof (p as TripPoiCandidate).category === 'string' &&
+      typeof (p as TripPoiCandidate).reason === 'string' &&
+      typeof (p as TripPoiCandidate).match === 'number',
+  )
+  if (!valid) return null
+  return { pois: f.pois, note: f.note }
+}
+
+export async function* streamTripPois(
+  input: TripPoiOrchestratorInput,
+): AsyncGenerator<{ chunk: string; final?: LLMTripPoiList }> {
+  // ── USE_MOCKS path: fixture 즉시 final 반환 ──
+  if (USE_MOCKS) {
+    yield { chunk: '', final: TRIP_POI_FALLBACK_FIXTURE }
+    return
+  }
+
+  // ── Real fetch path: server `/api/llm/trip-pois` SSE stream ──
+  // Lane B 가 endpoint 추가하기 전엔 404 → caller 가 catch 해서 fallback voice 표시
+  const res = await fetch(`${apiBaseUrl}/api/llm/trip-pois`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', accept: 'text/event-stream' },
+    body: JSON.stringify(input),
+  })
+  if (!res.ok) throw new Error(`TripPois LLM HTTP ${res.status}`)
+  if (!res.body) throw new Error('TripPois LLM 응답 body 없음')
+
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder('utf-8')
+  let buffer = ''
+  let finalRec: LLMTripPoiList | null = null
+
+  while (true) {
+    const { value, done } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    const { events, rest } = parseSseChunks(buffer)
+    buffer = rest
+    for (const ev of events) {
+      if (ev.event === 'final') {
+        const validated = validateTripPoiShape(ev.data)
+        if (validated) {
+          finalRec = validated
+        }
+      }
+    }
+  }
+
+  if (!finalRec) throw new Error('TripPois LLM stream 끝났지만 final payload 없음')
   yield { chunk: '', final: finalRec }
 }
