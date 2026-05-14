@@ -1,27 +1,216 @@
 import { LinearGradient } from 'expo-linear-gradient'
-import { Link } from 'expo-router'
+import { Link, useRouter } from 'expo-router'
+import { useEffect, useMemo, useState } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import Svg, { Circle, Line, Path } from 'react-native-svg'
+
+import type { DayForecast, ForecastResponse, WeatherCondition } from '@trip/types'
 
 import { InkMark } from '@/components/ink-mark'
+import { fetchForecast } from '@/services/weather'
+import { useTrip } from '@/stores/trip'
 import { lightColors } from '@/theme'
 import * as fonts from '@/theme/fonts'
 import { radius, spacing } from '@/theme/spacing'
 
 /**
- * Home — Shell B (docs/design-preview.html 의 SHELL B 그대로 RN 변환)
+ * Home — ★ v1.5 SHELL B' (design-preview line 2536-2611 직역 · D35)
  *
- *  - greet (잉크 마크 + 이름) + home-meta (날짜/날씨) + home-heading (em italic celadon)
- *  - next-trip (celadon-tint 카드 + 그라데이션 썸네일 + Fraunces italic count)
- *  - quick-grid (2x2 카드 · 잉크 점 + 라벨 + desc)
- *  - ambient (잉크 마크 + 명조 메시지 + em italic celadon)
+ * 기존 SHELL B 위에 D35 갱신:
+ *  - next-trip 갱신: 진행 중 (planning_step==='on_trip') 시 "Day N / Total" + 다음 stop preview
+ *  - 3 day 일자별 날씨 위젯 (active 있을 때만 mount · Phase 4e fetchForecast 재사용)
+ *  - 최근 대화 진입점 (어제 한 마디 preview · "→ 이어서" · 탭 → /(tabs)/talk)
+ *  - quick-grid 2 카드 (단순화 — 새로 짜기 + 동선 보기)
+ *  - ambient 가 일자별 날씨 인식 (비 day 있으면 "내일 비 와요. 실내로 바꿔둘게요")
  *
- * dummy 값 (사용자 이름/날씨/다음 여행/ambient) 은 Phase 3-5 에 store
- * (user-style · weather · trip · alert-queue) 연결 시 실제 데이터로 교체.
+ * 시그니처 freeze (D12): useTrip / fetchForecast 그대로 사용. 신규 store/route 추가 X.
  */
 
-// DESIGN.md 92줄 토큰 — theme/colors.ts 가 freeze 라 inline
-const celadonTint = 'rgba(74, 111, 165, 0.08)'
+// design-preview 직역 토큰 (theme 외 inline 허용 — caption 출처 hex)
+const celadonTint = lightColors.celadonTint
+const amberTextDeep = '#8E6A2A' // design-preview line 2569 (비 day text)
+const amberTint = 'rgba(232,184,96,0.08)' // design-preview line 2567 (비 day bg)
+const RAIN_THRESHOLD = 60
+
+// 최근 대화 진입점 dummy (Phase 5a 채팅 history store 통합 시 dynamic)
+const RECENT_CHAT_DUMMY = {
+  time: '12:02',
+  prefix: '"안목 해변 어떠세요? ',
+  emphasis: '사람 적은',
+  suffix: ' 시간이에요."',
+}
+
+// ── helpers ─────────────────────────────────────────
+
+type DayProgress = { dayN: number; total: number }
+
+function dayProgress(startDate: string, endDate: string): DayProgress | null {
+  const s = new Date(startDate)
+  const e = new Date(endDate)
+  if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return null
+  const total = Math.max(1, Math.round((e.getTime() - s.getTime()) / 86_400_000) + 1)
+  const today = new Date()
+  const elapsed = Math.floor((today.getTime() - s.getTime()) / 86_400_000) + 1
+  const dayN = Math.min(total, Math.max(1, elapsed))
+  return { dayN, total }
+}
+
+function formatShortDate(date: string): string {
+  const d = new Date(date)
+  if (Number.isNaN(d.getTime())) return date
+  return `${d.getMonth() + 1}/${d.getDate()}`
+}
+
+function isRainy(d: DayForecast): boolean {
+  return d.condition === 'rainy' || d.rainProb >= RAIN_THRESHOLD
+}
+
+// ── tiny WeatherIcon (14x14, design-preview line 2565/2570/2575 직역) ─
+
+function WeatherIconTiny({ condition, color }: { condition: WeatherCondition; color: string }) {
+  if (condition === 'rainy') {
+    return (
+      <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+        <Path
+          d="M17 14a4 4 0 1 0-1.2-7.85A6 6 0 0 0 5 9 4 4 0 0 0 6 16h11"
+          stroke={color}
+          strokeWidth={1.6}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <Line
+          x1={9}
+          y1={19}
+          x2={8}
+          y2={22}
+          stroke={color}
+          strokeWidth={1.6}
+          strokeLinecap="round"
+        />
+        <Line
+          x1={13}
+          y1={19}
+          x2={12}
+          y2={22}
+          stroke={color}
+          strokeWidth={1.6}
+          strokeLinecap="round"
+        />
+        <Line
+          x1={17}
+          y1={19}
+          x2={16}
+          y2={22}
+          stroke={color}
+          strokeWidth={1.6}
+          strokeLinecap="round"
+        />
+      </Svg>
+    )
+  }
+  if (condition === 'sunny') {
+    return (
+      <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+        <Circle
+          cx={12}
+          cy={12}
+          r={4}
+          stroke={color}
+          strokeWidth={1.6}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <Line
+          x1={12}
+          y1={2}
+          x2={12}
+          y2={4}
+          stroke={color}
+          strokeWidth={1.6}
+          strokeLinecap="round"
+        />
+        <Line
+          x1={12}
+          y1={20}
+          x2={12}
+          y2={22}
+          stroke={color}
+          strokeWidth={1.6}
+          strokeLinecap="round"
+        />
+        <Line
+          x1={4.93}
+          y1={4.93}
+          x2={6.34}
+          y2={6.34}
+          stroke={color}
+          strokeWidth={1.6}
+          strokeLinecap="round"
+        />
+        <Line
+          x1={17.66}
+          y1={17.66}
+          x2={19.07}
+          y2={19.07}
+          stroke={color}
+          strokeWidth={1.6}
+          strokeLinecap="round"
+        />
+        <Line
+          x1={2}
+          y1={12}
+          x2={4}
+          y2={12}
+          stroke={color}
+          strokeWidth={1.6}
+          strokeLinecap="round"
+        />
+        <Line
+          x1={20}
+          y1={12}
+          x2={22}
+          y2={12}
+          stroke={color}
+          strokeWidth={1.6}
+          strokeLinecap="round"
+        />
+        <Line
+          x1={4.93}
+          y1={19.07}
+          x2={6.34}
+          y2={17.66}
+          stroke={color}
+          strokeWidth={1.6}
+          strokeLinecap="round"
+        />
+        <Line
+          x1={17.66}
+          y1={6.34}
+          x2={19.07}
+          y2={4.93}
+          stroke={color}
+          strokeWidth={1.6}
+          strokeLinecap="round"
+        />
+      </Svg>
+    )
+  }
+  // cloudy / snowy → cloud
+  return (
+    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M17.5 19a4.5 4.5 0 1 0-1.3-8.8A6 6 0 0 0 5 12.5 4 4 0 0 0 6 20h11.5z"
+        stroke={color}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  )
+}
+
+// ── QuickAction (기존 SHELL B 와 동일 시각) ─────────
 
 type Dot = { size: 'sm' | 'md' | 'lg'; color?: string; opacity?: number }
 
@@ -100,8 +289,50 @@ function QuickAction({ href, label, description, dots }: QuickActionProps) {
   )
 }
 
+// ── Home ────────────────────────────────────────────
+
 export default function Home() {
   const insets = useSafeAreaInsets()
+  const router = useRouter()
+  const active = useTrip((s) => s.active)
+
+  // 진행 중 여행만 next-trip 카드 + 날씨 위젯 + ambient 인식 활성화
+  const isOnTrip = active?.planning_step === 'on_trip'
+  const progress = useMemo(
+    () => (isOnTrip && active ? dayProgress(active.startDate, active.endDate) : null),
+    [isOnTrip, active],
+  )
+
+  // 3 day 일자별 날씨 — active 트립 있을 때만 fetch
+  const [forecast, setForecast] = useState<ForecastResponse | null>(null)
+  const city = active?.city
+  const startDate = active?.startDate
+  const endDate = active?.endDate
+
+  useEffect(() => {
+    if (!city || !startDate || !endDate) {
+      setForecast(null)
+      return
+    }
+    let cancelled = false
+    fetchForecast({ city, startDate, endDate })
+      .then((data) => {
+        if (!cancelled) setForecast(data)
+      })
+      .catch((err) => {
+        if (cancelled) return
+        // eslint-disable-next-line no-console
+        console.warn('[home] forecast 호출 실패:', err)
+        setForecast(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [city, startDate, endDate])
+
+  // 비 day 인식 — ambient 메시지 + 첫 rainy 카드 강조
+  const rainyDay: DayForecast | undefined = forecast?.days.find(isRainy)
+  const visibleDays: DayForecast[] = forecast?.days.slice(0, 3) ?? []
 
   return (
     <ScrollView
@@ -173,7 +404,7 @@ export default function Home() {
         {'\n'}보내고 싶으세요?
       </Text>
 
-      {/* next-trip — celadon-tint 카드 + gradient 썸네일 + Fraunces italic count */}
+      {/* next-trip — 진행 중 (on_trip) vs 예정 분기 */}
       <View
         style={{
           flexDirection: 'row',
@@ -193,52 +424,212 @@ export default function Home() {
           end={{ x: 1, y: 1 }}
           style={{ width: 48, height: 48, borderRadius: 10 }}
         />
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text
-            style={{
-              fontFamily: fonts.family.voice,
-              fontSize: 15,
-              fontWeight: '500',
-              color: lightColors.text,
-            }}
-          >
-            부산 · 2박 3일
-          </Text>
-          <Text
-            style={{
-              fontSize: 11,
-              color: lightColors.celadon,
-              fontFamily: fonts.family.mono,
-              marginTop: 2,
-            }}
-          >
-            5/24 출발 · KE 1837
-          </Text>
-        </View>
-        <Text
-          style={{
-            fontFamily: fonts.family.numeric,
-            fontStyle: 'italic',
-            fontSize: 24,
-            color: lightColors.celadon,
-          }}
-        >
-          12
-          <Text
-            style={{
-              fontSize: 11,
-              fontFamily: fonts.family.mono,
-              fontStyle: 'normal',
-              opacity: 0.7,
-            }}
-          >
-            일 후
-          </Text>
-        </Text>
+        {isOnTrip && active && progress ? (
+          <>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text
+                style={{
+                  fontFamily: fonts.family.voice,
+                  fontSize: 15,
+                  fontWeight: '500',
+                  color: lightColors.text,
+                }}
+              >
+                {active.city} · Day {progress.dayN} / {progress.total}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 11,
+                  color: lightColors.celadon,
+                  fontFamily: fonts.family.mono,
+                  marginTop: 2,
+                }}
+              >
+                안목 해변 → 경포대
+              </Text>
+            </View>
+            <Text
+              style={{
+                fontFamily: fonts.family.numeric,
+                fontStyle: 'italic',
+                fontSize: 18,
+                color: lightColors.celadon,
+              }}
+            >
+              진행
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontFamily: fonts.family.mono,
+                  fontStyle: 'normal',
+                  opacity: 0.7,
+                }}
+              >
+                중
+              </Text>
+            </Text>
+          </>
+        ) : (
+          <>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text
+                style={{
+                  fontFamily: fonts.family.voice,
+                  fontSize: 15,
+                  fontWeight: '500',
+                  color: lightColors.text,
+                }}
+              >
+                부산 · 2박 3일
+              </Text>
+              <Text
+                style={{
+                  fontSize: 11,
+                  color: lightColors.celadon,
+                  fontFamily: fonts.family.mono,
+                  marginTop: 2,
+                }}
+              >
+                5/24 출발 · KE 1837
+              </Text>
+            </View>
+            <Text
+              style={{
+                fontFamily: fonts.family.numeric,
+                fontStyle: 'italic',
+                fontSize: 24,
+                color: lightColors.celadon,
+              }}
+            >
+              12
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontFamily: fonts.family.mono,
+                  fontStyle: 'normal',
+                  opacity: 0.7,
+                }}
+              >
+                일 후
+              </Text>
+            </Text>
+          </>
+        )}
       </View>
 
-      {/* quick-grid — 2x2 카드 */}
-      <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm }}>
+      {/* 3 day 일자별 날씨 위젯 — design-preview line 2561-2577 직역 (active 있을 때만) */}
+      {visibleDays.length > 0 ? (
+        <View
+          style={{
+            flexDirection: 'row',
+            gap: 6,
+            marginBottom: 18,
+          }}
+        >
+          {visibleDays.map((d) => {
+            const rainy = isRainy(d)
+            return (
+              <View
+                key={d.date}
+                style={{
+                  flex: 1,
+                  paddingVertical: 10,
+                  paddingHorizontal: 4,
+                  borderWidth: 1,
+                  borderColor: rainy ? lightColors.amber : lightColors.line,
+                  backgroundColor: rainy ? amberTint : lightColors.bg,
+                  borderRadius: 10,
+                  alignItems: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: fonts.family.mono,
+                    fontSize: 9,
+                    color: lightColors.textSoft,
+                  }}
+                >
+                  {formatShortDate(d.date)}
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: fonts.family.numeric,
+                    fontStyle: 'italic',
+                    fontSize: 16,
+                    color: rainy ? amberTextDeep : lightColors.text,
+                    marginVertical: 2,
+                  }}
+                >
+                  {d.tempC}°
+                </Text>
+                <WeatherIconTiny
+                  condition={d.condition}
+                  color={rainy ? amberTextDeep : lightColors.textMuted}
+                />
+              </View>
+            )
+          })}
+        </View>
+      ) : null}
+
+      {/* 최근 대화 진입점 — design-preview line 2580-2583 직역 */}
+      <Pressable
+        onPress={() => router.push('/(tabs)/talk')}
+        accessibilityRole="button"
+        accessibilityLabel="어제의 대화 이어서 보기"
+        style={({ pressed }) => ({
+          marginBottom: 18,
+          paddingVertical: 12,
+          paddingHorizontal: 14,
+          borderRadius: radius.card,
+          backgroundColor: celadonTint,
+          borderLeftWidth: 2,
+          borderLeftColor: lightColors.celadon,
+          opacity: pressed ? 0.8 : 1,
+        })}
+      >
+        <Text
+          style={{
+            fontFamily: fonts.family.mono,
+            fontSize: 10,
+            color: lightColors.celadon,
+            marginBottom: 4,
+          }}
+        >
+          {RECENT_CHAT_DUMMY.time} · 어제의 대화
+        </Text>
+        <Text
+          style={{
+            fontFamily: fonts.family.voice,
+            fontSize: 13,
+            lineHeight: 13 * 1.55,
+            color: lightColors.text,
+          }}
+        >
+          {RECENT_CHAT_DUMMY.prefix}
+          <Text
+            style={{
+              color: lightColors.celadon,
+              fontStyle: 'italic',
+            }}
+          >
+            {RECENT_CHAT_DUMMY.emphasis}
+          </Text>
+          {RECENT_CHAT_DUMMY.suffix}{' '}
+          <Text
+            style={{
+              color: lightColors.textSoft,
+              fontSize: 11,
+              fontStyle: 'italic',
+            }}
+          >
+            → 이어서
+          </Text>
+        </Text>
+      </Pressable>
+
+      {/* quick-grid — 2 카드 단순화 (새로 짜기 + 동선 보기) */}
+      <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
         <QuickAction
           href="/plan/new"
           label="새로 짜기"
@@ -246,31 +637,14 @@ export default function Home() {
           dots={[{ size: 'lg' }, { size: 'sm' }]}
         />
         <QuickAction
-          href="/profile"
-          label="지난 여행"
-          description="12번의 동행"
+          href="/(tabs)/travel"
+          label="동선 보기"
+          description="오늘 갈 곳 한 눈에"
           dots={[{ size: 'md' }, { size: 'md' }, { size: 'sm' }]}
         />
       </View>
-      <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
-        <QuickAction
-          href="/profile"
-          label="내 패턴"
-          description="어디를 좋아하셨는지"
-          dots={[
-            { size: 'md', color: lightColors.moss },
-            { size: 'md', color: lightColors.amber },
-          ]}
-        />
-        <QuickAction
-          href="/companion"
-          label="지금 떠나기"
-          description="당일치기 · 즉시 제안"
-          dots={[{ size: 'lg', color: lightColors.juhong }]}
-        />
-      </View>
 
-      {/* ambient — 잉크 마크 + 명조 메시지 + em italic celadon */}
+      {/* ambient — 일자별 날씨 인식 (비 day 있으면 amber 톤 메시지) */}
       <View
         style={{
           flexDirection: 'row',
@@ -297,16 +671,33 @@ export default function Home() {
             color: lightColors.text,
           }}
         >
-          어제 강릉 정리해뒀어요.{' '}
-          <Text
-            style={{
-              color: lightColors.celadon,
-              fontStyle: 'italic',
-              fontFamily: fonts.family.numeric,
-            }}
-          >
-            한 번 봐주세요.
-          </Text>
+          {rainyDay ? (
+            <>
+              내일 비 와요.{' '}
+              <Text
+                style={{
+                  color: lightColors.celadon,
+                  fontStyle: 'italic',
+                  fontFamily: fonts.family.numeric,
+                }}
+              >
+                실내로 바꿔둘게요.
+              </Text>
+            </>
+          ) : (
+            <>
+              어제 강릉 정리해뒀어요.{' '}
+              <Text
+                style={{
+                  color: lightColors.celadon,
+                  fontStyle: 'italic',
+                  fontFamily: fonts.family.numeric,
+                }}
+              >
+                한 번 봐주세요.
+              </Text>
+            </>
+          )}
         </Text>
       </View>
     </ScrollView>
