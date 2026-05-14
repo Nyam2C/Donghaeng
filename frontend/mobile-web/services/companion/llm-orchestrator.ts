@@ -3,6 +3,9 @@ import type {
   KakaoPOI,
   LLMCityRecommendation,
   LLMRecommendation,
+  LLMRoute,
+  LLMRouteList,
+  LLMRouteStop,
   LLMTripPoiList,
   TripPoiCandidate,
   UserStyle,
@@ -369,5 +372,100 @@ export async function* streamTripPois(
   }
 
   if (!finalRec) throw new Error('TripPois LLM stream 끝났지만 final payload 없음')
+  yield { chunk: '', final: finalRec }
+}
+
+// ---------------------------------------------------------------------------
+// D29 — SCENARIO 04 동선 선택 (LLMRouteList)
+// ---------------------------------------------------------------------------
+/**
+ * SCENARIO 04 의 동선 3 갈래 streamer.
+ *
+ * 입력 = 도시 + ♥ 한 POI id list (≥3) + user 의 결.
+ * 출력 = LLM 이 likedPoiIds 만 stops 로 묶어서 짠 3 갈래 동선 (Plan A/B/C — 정확히 3개).
+ * D2 정신 적용 — stops 의 poi_id 는 모두 likedPoiIds set 안에 있어야.
+ *
+ * Wire format (USE_MOCKS=false 시 server `/api/llm/routes` 응답):
+ *   SSE 표준 — `event: start → raw → final → done` (trip-pois 와 동일 패턴)
+ *   final.data = LLMRouteList
+ *
+ * USE_MOCKS=true 또는 Lane B 미완성 (404/5xx) 시:
+ *   fixture 즉시 final 반환 (강릉 가정, design-preview SCENARIO 04 톤 일치)
+ */
+
+const ROUTES_FALLBACK_FIXTURE: LLMRouteList =
+  require('../__mocks__/api/llm-routes.json') as LLMRouteList
+
+export interface RoutesOrchestratorInput {
+  city: string
+  likedPoiIds: string[]
+  userStyle: UserStyle
+}
+
+/** SSE event.data 가 LLMRouteList shape 인지 검증 (D2 정신). */
+function validateRoutesShape(raw: unknown): LLMRouteList | null {
+  if (!raw || typeof raw !== 'object') return null
+  const f = raw as Partial<LLMRouteList>
+  if (!Array.isArray(f.routes) || f.routes.length !== 3) return null
+  if (typeof f.note !== 'string') return null
+  const lettersOk = new Set(['A', 'B', 'C'])
+  const valid = f.routes.every((r): r is LLMRoute => {
+    if (!r || typeof r !== 'object') return false
+    const rr = r as Partial<LLMRoute>
+    if (typeof rr.letter !== 'string' || !lettersOk.has(rr.letter)) return false
+    if (typeof rr.name !== 'string' || typeof rr.reason !== 'string') return false
+    if (typeof rr.travelMin !== 'number' || typeof rr.moodStars !== 'number') return false
+    if (!Array.isArray(rr.stops)) return false
+    return rr.stops.every(
+      (s): s is LLMRouteStop =>
+        !!s &&
+        typeof (s as LLMRouteStop).poi_id === 'string' &&
+        typeof (s as LLMRouteStop).order === 'number',
+    )
+  })
+  if (!valid) return null
+  return { routes: f.routes, note: f.note }
+}
+
+export async function* streamRoutes(
+  input: RoutesOrchestratorInput,
+): AsyncGenerator<{ chunk: string; final?: LLMRouteList }> {
+  // ── USE_MOCKS path: fixture 즉시 final 반환 ──
+  if (USE_MOCKS) {
+    yield { chunk: '', final: ROUTES_FALLBACK_FIXTURE }
+    return
+  }
+
+  // ── Real fetch path: server `/api/llm/routes` SSE stream ──
+  const res = await fetch(`${apiBaseUrl}/api/llm/routes`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', accept: 'text/event-stream' },
+    body: JSON.stringify(input),
+  })
+  if (!res.ok) throw new Error(`Routes LLM HTTP ${res.status}`)
+  if (!res.body) throw new Error('Routes LLM 응답 body 없음')
+
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder('utf-8')
+  let buffer = ''
+  let finalRec: LLMRouteList | null = null
+
+  while (true) {
+    const { value, done } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    const { events, rest } = parseSseChunks(buffer)
+    buffer = rest
+    for (const ev of events) {
+      if (ev.event === 'final') {
+        const validated = validateRoutesShape(ev.data)
+        if (validated) {
+          finalRec = validated
+        }
+      }
+    }
+  }
+
+  if (!finalRec) throw new Error('Routes LLM stream 끝났지만 final payload 없음')
   yield { chunk: '', final: finalRec }
 }

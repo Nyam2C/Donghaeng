@@ -1,0 +1,45 @@
+{
+  "routes": [
+    {
+      "letter": "A",
+      "name": "바다 따라",
+      "reason": "해안선 따라 천천히, 멀리 보면서",
+      "stops": [
+        { "poi_id": "mock-001", "order": 1 },
+        { "poi_id": "mock-002", "order": 2 },
+        { "poi_id": "mock-003", "order": 3 },
+        { "poi_id": "mock-004", "order": 4 }
+      ],
+      "travelMin": 240,
+      "moodStars": 3,
+      "moodLabel": "차분함"
+    },
+    {
+      "letter": "B",
+      "name": "빵집 도장깨기",
+      "reason": "골목 빵집 셋, 사이엔 짧은 산책",
+      "stops": [
+        { "poi_id": "mock-002", "order": 1 },
+        { "poi_id": "mock-005", "order": 2 },
+        { "poi_id": "mock-003", "order": 3 }
+      ],
+      "travelMin": 180,
+      "moodStars": 3,
+      "moodLabel": "들뜸"
+    },
+    {
+      "letter": "C",
+      "name": "한 곳 깊게",
+      "reason": "한 동네에 머물면서 깊게 보는 결",
+      "stops": [
+        { "poi_id": "mock-001", "order": 1 },
+        { "poi_id": "mock-002", "order": 2 },
+        { "poi_id": "mock-004", "order": 3 }
+      ],
+      "travelMin": 120,
+      "moodStars": 4,
+      "moodLabel": "침잠"
+    }
+  ],
+  "note": "결 다른 세 갈래에요. 끌리는 쪽으로 가요"
+}
