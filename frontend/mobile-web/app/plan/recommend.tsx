@@ -1,6 +1,14 @@
+import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter } from 'expo-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import type { CityCandidate, LLMCityRecommendation } from '@trip/types'
@@ -17,7 +25,7 @@ import { radius, spacing } from '@/theme/spacing'
  *
  *  "네 곳 골라봤어요"
  *  → mount 시 useUserStyle.tags + utterance 로 streamCityRecommendation 호출
- *  → loading 동안 placeholder voice ("결을 살펴보고 있어요...")
+ *  → loading 동안 동적 애니메이션 (shimmer + typewriter + dots + ink 호흡)
  *  → final 도착 시 4 도시 카드 + note 한 줄
  *  → 에러 시 fallback voice ("결을 더 알아갈 시간이 필요해요...")
  *
@@ -32,10 +40,22 @@ import { radius, spacing } from '@/theme/spacing'
  *  - rec-name = Noto Serif KR 16px
  *  - rec-reason = Pretendard 11px textMuted
  *  - rec-match = Fraunces italic 18px celadon · .pct = DM Mono 11px textSoft
- *  - thumb = 64x64 청자 단색 + 첫 글자 흰색 Noto Serif KR
+ *  - thumb = 64x64 청자/녹청/황 톤 그라데이션 4 종 순환 + 첫 글자 흰색 Noto Serif KR
  *  - voice 인용 = 좌측 청자 2px 보더 + Noto Serif KR
+ *  - loading shimmer = transparent → rgba(255,255,255,0.35) → transparent · 1500ms linear repeat
  *  - 거품 radius / 보라 그라데이션 / UI 이모지 금지
  */
+
+// design-preview.html line 646-649 도시 그라데이션 4 종
+// 1) 바다 청자 (gangneung) · 2) 녹청→청자 (tongyeong)
+// 3) 녹청→황 (jeju-s) · 4) 청자→녹청 (geoje)
+// 도시명-그라데이션 고정 매핑 X — 카드 index % 4 로 순환 (LLM 응답 도시가 동적이므로)
+const REC_GRADIENTS: readonly [string, string, string][] = [
+  ['#6B89B5', '#4A6FA5', '#2E4E7F'],
+  ['#88B098', '#4A6FA5', '#2E4E7F'],
+  ['#5F8B6E', '#88B098', '#E8B860'],
+  ['#4A6FA5', '#6B89B5', '#88B098'],
+]
 
 interface RecommendedCity extends CityCandidate {
   /** 썸네일 첫 글자 (도시명 앞 한 글자, "제주 남부" 는 "제") */
@@ -53,6 +73,128 @@ type RecommendState =
   | { status: 'loading' }
   | { status: 'ready'; data: LLMCityRecommendation }
   | { status: 'error' }
+
+/**
+ * Skeleton shimmer — 좌→우 빛 흐름.
+ * 카드 thumb · line bar 위에 깔리는 transparent 그라데이션 overlay.
+ * delay 는 외부에서 mount 시점 차로 자연스러운 sequential 흐름 표현 (per-card).
+ */
+function SkeletonShimmer({ width, height }: { width: number; height: number }) {
+  const x = useSharedValue(-width)
+  useEffect(() => {
+    x.value = -width
+    x.value = withRepeat(
+      withTiming(width * 2, { duration: 1500, easing: Easing.linear }),
+      -1,
+      false,
+    )
+  }, [x, width])
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateX: x.value }],
+  }))
+  return (
+    <View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width,
+        height,
+        overflow: 'hidden',
+      }}
+    >
+      <Animated.View style={[{ position: 'absolute', top: 0, width: width * 0.6, height }, style]}>
+        <LinearGradient
+          colors={['transparent', 'rgba(255,255,255,0.35)', 'transparent']}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={{ width: '100%', height: '100%' }}
+        />
+      </Animated.View>
+    </View>
+  )
+}
+
+/**
+ * Typewriter — 한 글자씩 fade-in (60ms/글자 default).
+ * text 변경 시 처음부터 다시. 부모가 voice 인용 스타일 (Text 자식) 로 감싼다.
+ */
+function TypewriterText({
+  text,
+  charDelay = 60,
+  style,
+}: {
+  text: string
+  charDelay?: number
+  style?: React.ComponentProps<typeof Text>['style']
+}) {
+  const [visible, setVisible] = useState(0)
+  useEffect(() => {
+    setVisible(0)
+    const interval = setInterval(() => {
+      setVisible((v) => {
+        if (v < text.length) return v + 1
+        clearInterval(interval)
+        return v
+      })
+    }, charDelay)
+    return () => clearInterval(interval)
+  }, [text, charDelay])
+  return <Text style={style}>{text.slice(0, visible)}</Text>
+}
+
+/**
+ * Dots loader — 점 3개 차례로 켜졌다 같이 꺼지는 1.2초 cycle.
+ * voice 인용 끝의 inline · 차분한 톤 (점 = 청자).
+ *
+ * timeline (t ∈ [0, 1]):
+ *  - 0.00~0.25 : dot1 fade-in (0.15 → 1)
+ *  - 0.25~0.50 : dot2 fade-in
+ *  - 0.50~0.75 : dot3 fade-in
+ *  - 0.75~1.00 : 셋 다 fade-out
+ */
+function computeDotOpacity(v: number, offset: number): number {
+  'worklet'
+  if (v < offset) return 0.15
+  if (v < offset + 0.25) return 0.15 + (v - offset) * 4 * 0.85
+  if (v < 0.75) return 1
+  return 1 - (v - 0.75) * 4 * 0.85
+}
+
+function DotsLoader() {
+  const t = useSharedValue(0)
+  useEffect(() => {
+    t.value = 0
+    t.value = withRepeat(withTiming(1, { duration: 1200, easing: Easing.linear }), -1, false)
+  }, [t])
+
+  const d1 = useAnimatedStyle(() => ({ opacity: computeDotOpacity(t.value, 0) }))
+  const d2 = useAnimatedStyle(() => ({ opacity: computeDotOpacity(t.value, 0.25) }))
+  const d3 = useAnimatedStyle(() => ({ opacity: computeDotOpacity(t.value, 0.5) }))
+
+  const dotBase = {
+    fontFamily: fonts.family.voice,
+    fontSize: 14,
+    color: lightColors.celadon,
+    lineHeight: 14 * 1.55,
+    marginLeft: 2,
+  } as const
+
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginLeft: 2,
+      }}
+    >
+      <Animated.Text style={[dotBase, d1]}>·</Animated.Text>
+      <Animated.Text style={[dotBase, d2]}>·</Animated.Text>
+      <Animated.Text style={[dotBase, d3]}>·</Animated.Text>
+    </View>
+  )
+}
 
 export default function PlanRecommend() {
   const insets = useSafeAreaInsets()
@@ -145,7 +287,7 @@ export default function PlanRecommend() {
         }}
         keyboardShouldPersistTaps="handled"
       >
-        {/* greet — InkMark + "네 곳 골라봤어요" (loading 일 땐 약한 glow) */}
+        {/* greet — InkMark + "네 곳 골라봤어요" (loading 일 땐 살짝 큰 호흡) */}
         <View
           style={{
             flexDirection: 'row',
@@ -155,7 +297,7 @@ export default function PlanRecommend() {
             marginBottom: spacing.sm + 2,
           }}
         >
-          <InkMark size={28} glow={state.status === 'loading' ? 'away' : 'normal'} />
+          <InkMark size={state.status === 'loading' ? 32 : 28} glow="normal" />
           <Text
             style={{
               fontFamily: fonts.family.voice,
@@ -179,29 +321,55 @@ export default function PlanRecommend() {
         >
           {state.status === 'loading' ? (
             <>
-              <Text
-                style={{
-                  fontFamily: fonts.family.voice,
-                  fontSize: 14,
-                  lineHeight: 14 * 1.55,
-                  letterSpacing: -0.14,
-                  color: lightColors.text,
-                }}
-              >
-                <Text style={{ fontStyle: 'italic', color: lightColors.celadon }}>잠깐만요</Text>,
-                결에 어울리는 곳을
-              </Text>
-              <Text
-                style={{
-                  fontFamily: fonts.family.voice,
-                  fontSize: 14,
-                  lineHeight: 14 * 1.55,
-                  letterSpacing: -0.14,
-                  color: lightColors.text,
-                }}
-              >
-                한 번 골라보고 있어요.
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap' }}>
+                <Text
+                  style={{
+                    fontFamily: fonts.family.voice,
+                    fontSize: 14,
+                    lineHeight: 14 * 1.55,
+                    letterSpacing: -0.14,
+                    color: lightColors.celadon,
+                    fontStyle: 'italic',
+                  }}
+                >
+                  잠깐만요
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: fonts.family.voice,
+                    fontSize: 14,
+                    lineHeight: 14 * 1.55,
+                    letterSpacing: -0.14,
+                    color: lightColors.text,
+                  }}
+                >
+                  ,{' '}
+                </Text>
+                <TypewriterText
+                  text="결에 어울리는 곳을"
+                  style={{
+                    fontFamily: fonts.family.voice,
+                    fontSize: 14,
+                    lineHeight: 14 * 1.55,
+                    letterSpacing: -0.14,
+                    color: lightColors.text,
+                  }}
+                />
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <TypewriterText
+                  text="한 번 골라보고 있어요"
+                  charDelay={60}
+                  style={{
+                    fontFamily: fonts.family.voice,
+                    fontSize: 14,
+                    lineHeight: 14 * 1.55,
+                    letterSpacing: -0.14,
+                    color: lightColors.text,
+                  }}
+                />
+                <DotsLoader />
+              </View>
             </>
           ) : state.status === 'ready' ? (
             <>
@@ -260,7 +428,7 @@ export default function PlanRecommend() {
           )}
         </View>
 
-        {/* rec-card * 4 (loading 일 땐 placeholder 4개 · ready 일 땐 실제) */}
+        {/* rec-card * 4 (loading 일 땐 shimmer placeholder · ready 일 땐 실제 그라데이션 thumb) */}
         {state.status === 'loading'
           ? [0, 1, 2, 3].map((i) => (
               <View
@@ -276,39 +444,71 @@ export default function PlanRecommend() {
                   borderWidth: 1,
                   borderColor: lightColors.line,
                   marginBottom: spacing.sm + 2,
-                  opacity: 0.55,
                 }}
               >
+                {/* thumb placeholder — 카드 index 별 그라데이션 (옅게 · shimmer overlay) */}
                 <View
                   style={{
                     width: 64,
                     height: 64,
                     borderRadius: 10,
-                    backgroundColor: lightColors.celadonSoft,
+                    overflow: 'hidden',
                     flexShrink: 0,
                   }}
-                />
-                <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
+                >
+                  <LinearGradient
+                    colors={REC_GRADIENTS[i % 4]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{ width: 64, height: 64, opacity: 0.45 }}
+                  />
+                  <SkeletonShimmer width={64} height={64} />
+                </View>
+
+                {/* line bar placeholders + shimmer */}
+                <View style={{ flex: 1, minWidth: 0, gap: 8 }}>
                   <View
                     style={{
                       height: 14,
                       width: '40%',
                       borderRadius: 4,
-                      backgroundColor: lightColors.line,
+                      backgroundColor: lightColors.celadonSoft,
+                      opacity: 0.35,
+                      overflow: 'hidden',
                     }}
-                  />
+                  >
+                    <SkeletonShimmer width={140} height={14} />
+                  </View>
                   <View
                     style={{
                       height: 10,
                       width: '75%',
                       borderRadius: 4,
-                      backgroundColor: lightColors.line,
+                      backgroundColor: lightColors.celadonSoft,
+                      opacity: 0.3,
+                      overflow: 'hidden',
                     }}
-                  />
+                  >
+                    <SkeletonShimmer width={220} height={10} />
+                  </View>
+                </View>
+
+                {/* match number bar */}
+                <View
+                  style={{
+                    width: 32,
+                    height: 14,
+                    borderRadius: 4,
+                    backgroundColor: lightColors.celadonSoft,
+                    opacity: 0.35,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <SkeletonShimmer width={32} height={14} />
                 </View>
               </View>
             ))
-          : cities.map((city) => (
+          : cities.map((city, idx) => (
               <Pressable
                 key={city.name}
                 onPress={() => handleSelectCity(city)}
@@ -327,30 +527,18 @@ export default function PlanRecommend() {
                   opacity: pressed ? 0.85 : 1,
                 })}
               >
-                {/* rec-thumb */}
-                <View
+                {/* rec-thumb — 도시 그라데이션 4 종 순환 (design-preview line 646-649). 글자 없이 분위기만. */}
+                <LinearGradient
+                  colors={REC_GRADIENTS[idx % 4]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
                   style={{
                     width: 64,
                     height: 64,
                     borderRadius: 10,
-                    backgroundColor: lightColors.celadon,
-                    alignItems: 'center',
-                    justifyContent: 'center',
                     flexShrink: 0,
                   }}
-                >
-                  <Text
-                    style={{
-                      fontFamily: fonts.family.voice,
-                      fontSize: 26,
-                      fontWeight: '500',
-                      color: '#FAFAFA',
-                      lineHeight: 26 * 1.0,
-                    }}
-                  >
-                    {city.glyph}
-                  </Text>
-                </View>
+                />
 
                 {/* rec-info */}
                 <View style={{ flex: 1, minWidth: 0 }}>

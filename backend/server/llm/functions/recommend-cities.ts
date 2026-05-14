@@ -8,7 +8,7 @@ import type { LLMCityRecommendation } from '@trip/types'
 import { LLMCityRecommendationSchema, type RecommendCitiesInput } from '@trip/types'
 import { createLLMFunction } from '../factory'
 import { CITY_FRAGMENT } from '../prompts'
-import { KOREAN_CITY_SET, RecommendCitiesInputSchema } from '../schemas'
+import { KOREAN_CITY_SET, RecommendCitiesInputSchema, isKoreanCity } from '../schemas'
 
 // 결 → 후보 도시 풀 (mockFallback 용)
 const POOLS = {
@@ -88,7 +88,9 @@ ${tagsLine}
 [규칙]
 - cities 는 정확히 4개. 비슷한 결 2 + 다른 결 2 로 섞기.
 - name 은 한국 실재 도시명만. 예: ${hintCities}.
-- 새 도시명 생성 X. 광역시도 또는 시군구. 제주는 "제주 남부" / "제주 동부" 같은 권역 허용.
+- 새 도시명 생성 X. 광역시도 / 시군구 / 광역시+동·구 ("서울 성수" "부산 해운대" "서울 홍대" 같은 형태) 허용.
+- 제주는 "제주 남부" / "제주 동부" 같은 권역 허용.
+- 사용자 발화에 쇼핑·맛집·야경·테마 같은 *구체 의도* 가 있으면 그 의도에 정확히 맞는 동/구 단위 추천 환영.
 - reason 12-25자 친구 톤.
 - match 0~100 정수, 사용자 결과 도시 분위기의 매칭도.
 - note 15-30자 친구 톤.`
@@ -110,7 +112,7 @@ export const recommendCities = createLLMFunction({
     // match 정규화 + whitelist 검증
     const invalid: string[] = []
     for (const c of output.cities) {
-      if (!KOREAN_CITY_SET.has(c.name)) invalid.push(c.name)
+      if (!isKoreanCity(c.name)) invalid.push(c.name)
       // match 정규화 (0~1 → 0~100, side effect — output 직접 수정)
       const m = c.match <= 1 ? c.match * 100 : c.match
       c.match = Math.max(0, Math.min(100, Math.round(m)))

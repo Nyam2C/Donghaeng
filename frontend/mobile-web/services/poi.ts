@@ -19,9 +19,14 @@ export async function searchCity(query: string): Promise<KakaoPOI[]> {
   return apiFetch<KakaoPOI[]>(path)
 }
 
-export async function nearbyPois(
-  _gps: GpsCoord,
-  _categories: KakaoCategory[],
-): Promise<KakaoPOI[]> {
-  throw new Error('NotImplemented · Phase 4 타겟')
+/**
+ * Phase 4 — 좌표 기반 근처 POI 조회 (server `/api/poi/nearby` 프록시 호출).
+ *
+ * 빈 categories 는 즉시 [] — 불필요한 호출 차단.
+ * caller (companion.tsx) 가 1km/5분 캐시 결정. 이 함수는 캐시 없음.
+ */
+export async function nearbyPois(gps: GpsCoord, categories: KakaoCategory[]): Promise<KakaoPOI[]> {
+  if (categories.length === 0) return []
+  const path = `/api/poi/nearby?lat=${gps.lat}&lng=${gps.lng}&categories=${categories.join(',')}`
+  return apiFetch<KakaoPOI[]>(path)
 }
