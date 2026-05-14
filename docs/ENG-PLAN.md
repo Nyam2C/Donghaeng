@@ -683,24 +683,124 @@ Phase 4 — 여행 탭 · v1 · 4 모드 (D27 state machine)
 │      코드 변경 0 (D27 의 mode router 가 진입점 분기만)
 │
 └─ 4d (Day 16-17) — 지도 모달 C (⊕) ← 기존 명칭 "Phase 4b" 에서 변경
-    ├─ react-native-maps 통합 (카카오는 Google Maps SDK 호환)
-    ├─ POI 핀 컴포넌트 (카카오 좌표 → 마커, 단청 색)
-    ├─ 하단 드래그 시트 (@gorhom/bottom-sheet)
-    ├─ 모달 진입 transition (300ms slide-up)
-    └─ × 닫기 / swipe-down → ON-TRIP COMPANION 복귀
+    ├─ **D31 (2026-05-15)**: 지도 = stylized 미니맵 (react-native-svg + LinearGradient) — react-native-maps 의존 X. D29 정신 일관 (color/그라데이션 + SVG · v1 "직전 제일" 명제). v2 에서 real Google Maps SDK 검토.
+    ├─ stylized 미니맵 (design-preview line 1964-2036 직역):
+    │   ├─ 상단 240px = linear-gradient(135deg, #E8E4DA → #DDD8CC → #C9C3B6) 한지 톤 베이지
+    │   ├─ 청자 그리드 32px square (rgba(74,111,165,0.06))
+    │   ├─ 도로 stub (수평 50% + 수직 55%, rgba(31,31,31,0.08))
+    │   ├─ 현재 위치 = 중앙 큰 잉크 마크 (48x48 celadon)
+    │   └─ POI 핀 = nearbyPois 의 lat/lng → 화면 normalize (현재 위치 중앙 기준)
+    ├─ POI 핀 컴포넌트 (24x24 또는 22x22 원 + 단청 색 (juhong/moss/celadon) + 흰 보더 2px + 그림자 + 카테고리 아이콘 + DM Mono 9px 거리 라벨 "{N}분")
+    ├─ 하단 드래그 시트 (@gorhom/bottom-sheet 또는 PanResponder + Reanimated — 가벼운 옵션 우선):
+    │   ├─ 시트 핸들 36x3 rounded-full
+    │   ├─ 헤더 "인근 {N}곳" + "{location.name} · {tempC}°"
+    │   └─ POI row × N (40x40 그라데이션 thumb + name Noto Serif 14 + meta italic celadon + DM Mono 11 distance)
+    ├─ floating voice (미니맵 하단 안쪽, celadon 잉크 + Noto Serif KR 13px)
+    ├─ × 닫기 (좌상단 44x44, bg-elev + line-strong 보더 + 그림자) → ON-TRIP COMPANION 복귀
+    ├─ 🎙️ 음성 토글 (우상단 44x44) — Phase 5a 진입점, v1 visual only
+    └─ 모달 진입 transition (300ms slide-up Reanimated) / swipe-down 닫기
 
 **v2 보류:** B Voice modal (◐). v1엔 Listening state로 충분.
 
-**Phase 4 완료 체크리스트:**
-- [ ] `bun run typecheck && bun run test` green (card-resolver 14 케이스 + 신규 trip-pois/routes eval)
-- [ ] 본인 디바이스에서 4 모드 자동 분기 확인 (TRIP START → SCENARIO 03 → SCENARIO 04 → ON-TRIP COMPANION seamless)
-- [ ] SCENARIO 03 의 12/23 카운터 = 좋아요/LLM 프롬프트 전체. prompt 자유 입력 재호출 흐름 매끄러움
-- [ ] SCENARIO 04 의 색 그라데이션 미니맵 + 무드 별점 = design-preview 와 시각 일치
-- [ ] "A로 갈래요" 누르면 즉시 ON-TRIP COMPANION 진입 (별도 단계 X)
-- [ ] 지도 모달 슬라이드업/다운 매끄러움. POI 핀 단청 색. 데이터 상태 보존
-- [ ] PR 머지 (4a'/4b'/4d 각각 또는 묶음)
+### Phase 4e — 날짜 + 일자별 날씨 (Day 22, D33 신규)
 
-### Phase 5 — TTS 대화 (Day 15-18) · stub 채우기
+design-preview line 2375+ 의 SCENARIO 02.5 직역. TRIP START 의 도시 선택 후, SCENARIO 03 (POI 큐레이션) 전 신규 step.
+
+```
+Phase 4e — 날짜 + 일자별 날씨 (Day 22, ~1 day)
+├─ 신규 backend: routes/weather.ts 확장 — POST/GET /api/weather/forecast?city=...&start=...&end=...
+│  └─ OpenWeather Forecast 5-day API → 일자별 {date, tempC, condition, rainProb} 배열
+├─ 신규 frontend: components/date-weather.tsx (3 day 가로 row · 비 day amber · 친구 톤 voice)
+├─ trip store 갱신: useTrip.startTrip 의 startDate/endDate 사용자 입력 단계 (TRIP START 후)
+├─ TRIP START "강릉" chip → 신규 SCENARIO 02.5 → SCENARIO 03 진입 (planning_step 'pois')
+└─ voice fallback "둘째 날 비 좀 있어요. 실내 위주로 짜놨어요" (LLM 이 forecast 인식)
+
+완료 체크리스트:
+- [ ] typecheck + lint pass
+- [ ] curl /api/weather/forecast?city=강릉&start=2026-05-14&end=2026-05-16 → 3 day 응답
+- [ ] 디바이스에서 강릉 → 3 day 카드 + 비 day amber 확인
+- [ ] design-preview SCENARIO 02.5 와 시각 일치
+```
+
+### Phase 4f — 홈 강화 SHELL B' (Day 23, D35 신규)
+
+design-preview line 2475+ 의 SHELL B' 직역. 기존 `app/(tabs)/home.tsx` 갱신.
+
+```
+Phase 4f — 홈 강화 (Day 23, ~1 day)
+├─ next-trip 카드 갱신: "Day N / Total" + 다음 stop preview (useTrip + companion state)
+├─ 3 day 일자별 날씨 위젯 (Phase 4e 의 /api/weather/forecast 재사용)
+├─ 최근 대화 진입점 (어제/오늘 마지막 동행 발언 preview · "→ 이어서" celadon · 탭 → 대화 탭)
+├─ quick-grid 2 카드 (단순화 — "새로 짜기" + "동선 보기")
+└─ ambient: 일자별 날씨 인식 ("내일 비 와요. 실내로 바꿔둘게요")
+
+완료 체크리스트:
+- [ ] typecheck + lint pass
+- [ ] 디바이스에서 홈 → 3 위젯 + 최근 대화 + ambient 확인
+- [ ] design-preview SHELL B' 와 시각 일치
+- [ ] 최근 대화 진입점 탭 → 대화 탭 navigate + 자동 scroll-to-bottom
+```
+
+### Phase 4g — 온보딩 (탭바 없음, Day 24, D36 신규)
+
+design-preview line 2320+ 의 SCENARIO 00 직역. 앱 첫 진입 시 탭바 없는 풀스크린.
+
+```
+Phase 4g — 온보딩 (Day 24, ~0.5 day)
+├─ 신규 app/onboarding.tsx (또는 app/index.tsx 의 권한 미설정 분기)
+├─ 중앙 큰 잉크 마크 (80x80 breathing) + "옆에서 같이 짜볼게요" Noto Serif 24px
+├─ 권한 카드 2개 (위치 + 알림 · "선택" 라벨로 강제 X · 마이크 X)
+├─ "시작할게요" CTA → 홈 진입 + useSession.onboarded = true
+├─ 탭바 없음 (D36)
+└─ useSession 에 onboarded?: boolean 옵셔널 추가 (D12 옵셔널 룰)
+
+완료 체크리스트:
+- [ ] typecheck + lint pass
+- [ ] 첫 진입 시 onboarding 자동 mount, "시작할게요" 후 홈 진입
+- [ ] AsyncStorage persist (onboarded=true) → 재실행 시 onboarding skip
+- [ ] design-preview SCENARIO 00 와 시각 일치
+```
+
+**Phase 4 완료 체크리스트 (4a'-4g 통합):**
+- [ ] `bun run typecheck && bun run test` green
+- [ ] 본인 디바이스에서 통합 흐름: 첫 진입 onboarding → 홈 → "강릉" → 날짜+날씨 → POI 큐레이션 → 동선 선택 → ON-TRIP → ⊕ 지도 모달
+- [ ] SCENARIO 03 의 카운터 + 채팅 진입점 (D32)
+- [ ] SCENARIO 04 의 색 그라데이션 + Plan A/B/C
+- [ ] 지도 모달 슬라이드업/다운
+- [ ] 홈 SHELL B' 의 3 day 위젯 + 최근 대화 진입점
+- [ ] 온보딩 첫 진입 + 권한 + AsyncStorage persist
+
+### Phase 5 — 채팅 대화 (Day 25-26, D32 재정의)
+
+기존 "음성 default + 일기 옵션" 흐름 폐기 (D32). 채팅 default 로 재정의. 음성 모드는 v2 후순위.
+
+```
+Phase 5 — 채팅 대화 v1 (Day 25-26, ~2 day)
+├─ 5a (Day 25) — 채팅 모드 default (design-preview SCENARIO 07-CHAT 직역)
+│   ├─ 대화 탭 default = 채팅 모드 (텍스트)
+│   ├─ 대화 history Zustand 누적 (사용자=Pretendard dim · 동행=Noto Serif KR + celadon 좌보더)
+│   ├─ 하단 텍스트 입력창 active + 전송 ↑ (celadon 원 44x44)
+│   ├─ 우상단 mic 아이콘 = visual placeholder (opacity 0.5 disabled, v2 음성 진입점)
+│   ├─ ALERT 자동 entry (amber-tint 좌보더 + "[지도로 보기]" celadon 링크)
+│   └─ 신규 LLM 함수 `chat-conversation.ts` (D22 factory · streaming · context 보존)
+├─ 5b (Day 26) — 대화로 동선 변경 (SCENARIO 08, D34)
+│   ├─ Intent extraction LLM call (D4 재사용) — 'add_poi' / 'remove_poi' / 'change_day' / 'continue'
+│   ├─ 'add_poi' 감지 → 신규 LLM 함수 `update-route.ts` (현재 동선 + POI 추가) → 인라인 동선 카드
+│   ├─ 인라인 동선 카드: 미니맵 + stops list (오전/점심/오후/저녁) + 추가 stop 주홍 + 무드 stats
+│   ├─ CTA "이대로" → useTrip 동선 update / "다른 곳도" → 재호출
+│   └─ ON-TRIP COMPANION + 채팅 양방향 sync
+
+**v2 후순위 (Phase 7 또는 그 이후):**
+- 음성 모드 (SCENARIO 07-VOICE): edge-tts/Clova + STT + Reanimated pulse + AirPods + 백그라운드 모드 entitlement
+
+**Phase 5 완료 체크리스트:**
+- [ ] `bun run typecheck && bun run test` green (chat-conversation eval · intent eval 30 cases)
+- [ ] 디바이스에서 채팅 모드 5턴 대화 자연스러움 (친구 톤 voice)
+- [ ] "정동진도 가고 싶어" → 인라인 동선 카드 즉시 표시 → "이대로" → ON-TRIP 동선 update
+- [ ] ALERT 자동 entry + 지도로 보기 링크 → ON-TRIP navigate
+- [ ] design-preview SCENARIO 07-CHAT + 08 시각 일치
+
+### Phase 5 (구) — 음성 모드 (v2 후순위 lock) · stub 보존
 
 ```
 Phase 5 — TTS 대화 v1 · 2 mode (Day 15-18)
@@ -1021,7 +1121,7 @@ GET  /health            → { "ok": true }
 |---|---|---|
 | POI 리스트 (시나리오 03) | 짜는 단계 X, 사용자가 안 짬 | v2 |
 | 동선 추천 다중 버전 (시나리오 04) | 일정 짜기 자체가 v1 X | v2 |
-| 예약 플랫폼 (시나리오 05) | 결제·법무·이용약관 별도 작업 | v3 |
+| ~~예약 플랫폼 (시나리오 05)~~ | **제거 (2026-05-15)** — 결제·법무·이용약관은 동행의 friendship 명제와 별개 제품. design-preview SCENARIO 05 markup 삭제 | out-of-scope |
 | 돌발 리플랜 (시나리오 06) | 일정 자체가 없음 | v2 |
 | 편지 일정 (★) | 디자인 시그니처지만 v1 핵심 X | v2 (★ 우선 후보) |
 | 프로필 편집 (Shell C 일부) | 본인+친구 5명엔 불필요 | v2 |
@@ -1093,10 +1193,16 @@ GET  /health            → { "ok": true }
 | 2026-05-14 | **D28: TRIP START 화면 = design-preview ★ TRIP START 정확 매핑 (3 경로 동시 제공)** | design-preview line 1814-1890 의 "★ v1 · TRIP START" 화면을 RN 으로 정확 매핑. 3 경로 동시 제공: (1) 도시 검색 input + 인기 8 chip (강릉/부산/제주/통영/속초/여수/경주/전주) → 누르면 `useTrip.startTrip({city, planning_step:'pois'})` + SCENARIO 01 결 입력 step skip → 자동 여행 탭 navigate (SCENARIO 03), (2) 분위기 4 카드 ("바다 보러" · "산·자연" · "도시 골목" · "조용히") → 분위기 = 결 1개 자동 매핑 ("조용히" → "조용함" 등) → SCENARIO 02 도시 추천 직접 진입 (SCENARIO 01 skip), (3) 하단 dashed 진입점 "어떤 결의 여행이 좋은지 같이 정해볼까요? 대화로 추천 받기 →" → SCENARIO 01 (/plan/new) 진입. design-preview 캡션 *"한 화면에 3가지 경로 동시 제공"* 원칙 일치. 분위기 → 결 1개 매핑이 죄박할 수 있으나 *빠른 진입* 가치 우선 (도시·분위기 명확한 사용자에게 결 입력 강제 X). D19 패턴 (design-preview 가 진실) 일치. plan-design-review Pass 3 (5/10 → 9/10) |
 | 2026-05-14 | **D29: SCENARIO 03/04 spec 확정 (12/23 카운터 · ♥≥3 진입 조건 · "A로 갈래요" seamless · 색 그라데이션 미니맵)** | **SCENARIO 03 (POI 큐레이션):** 헤더 `"{city} · {duration}" + "{♥수} / {LLM프롬프트전체수}"` (예: "12 / 23"). 12 = 좋아요한 수, 23 = LLM 이 제시한 전체 — design-preview 캡션 "사용자가 함께 잡아간" 원칙 일치. 좋아요 history 는 user-style.likedPoiIds 활용 (기존). 하단 prompt 자유 입력 ("더 한적한 카페만…") → LLM 재호출 (dislikedIds + new prompt). "다음 단계" CTA = ♥ ≥ 3 이면 활성화, 미만이면 voice 고목 "몇 개 더 고르면 동선 만들게요" (LLM 재료 충분성 + 친구 톤). **SCENARIO 04 (동선 선택):** route-card 3개 (Plan A/B/C, design-preview line 1743-1799). 미니맵 = **색 그라데이션 + SVG 재구조** (react-native-maps 의존 X · native deps 0 · design-preview 캡션 "색으로만 무드 차이 전달" 그대로). CTA "A로 갈래요" → `useTrip.startTrip(prev → {...prev, planning_step:'on_trip'})` → 여행 탭 자동 ON-TRIP COMPANION 모드 진입 (seamless · 일자 선택 추가 step X · v1 "직전 제일" 명제 일치). **신규 LLM 함수 2개** (D2 정신 · D22 factory 패턴): `recommend-trip-pois.ts` (입력 `{city, userStyle, dislikedIds?, prompt?}` · 출력 `LLMTripPoiList`) + `recommend-routes.ts` (입력 `{city, likedPoiIds[≥3], userStyle}` · 출력 `LLMRouteList`). `shared/types/src/llm.ts` 에 `LLMTripPoiList` + `LLMRouteList` + `LLMRoute` 추가 (옵셔널). 기존 `LLMRecommendation` · `LLMCityRecommendation` 무변경. plan-design-review Pass 7 결정 lock |
 | 2026-05-14 | **D30: Phase 4 sub-phase 재편 — line 643 명세 재해석 (plan-design-review 1차)** | 기존 ENG-PLAN line 643 "Phase 4 — 현장 컴패니언 (Day 9-14)" 명세는 design-preview 의 *짜는 단계* (SCENARIO 03/04) 를 누락. 재편: **Phase 4a' (Day 9-12) = 여행 탭 mode router + TRIP START + SCENARIO 03** (신규) · **Phase 4b' (Day 13-15) = SCENARIO 04 + "A로 갈래요" → ON-TRIP 자동 진입** (신규) · **Phase 4c (Day 9-12 머지됨, PR #5) = ON-TRIP COMPANION** (기존 Phase 4a 산출물 진입점 재배치만 · 코드 변경 0) · **Phase 4d (Day 16-17) = ⊕ 지도 모달** (기존 명칭 "Phase 4b" 에서 변경). 기존 Phase 4a 산출물 8 파일 폐기 X — 진입점만 변경 (`(tabs)/travel.tsx` mode router 가 inline mount). design-preview 가 진실 (D19 패턴) — ENG-PLAN line 643 의 기존 명세 폐기. Phase 4 의 시간 영향 = +7일 (Phase 4a' ~4일 + Phase 4b' ~3일). Phase 5 (TTS) 는 그대로 시프트 (Day 15-18 → Day 22-25). 총 잔여 ~3.5주 (기존 2.5주 + 1주) |
+| 2026-05-15 | **D31: Phase 4d 지도 모달 = stylized 미니맵 (react-native-maps 의존 X) — D29 정신 일관** | Phase 4d 진입 시 ENG-PLAN line 685 ("react-native-maps 통합") 와 design-preview line 1964-2036 (stylized 미니맵 — 한지 톤 베이지 그라데이션 + 청자 그리드 + SVG 도로 stub + 단청 색 POI 핀) 의 충돌 발견. design-preview 가 진실 (D19 패턴) — react-native-svg + LinearGradient 로 stylized 직역. D29 의 "색 그라데이션 + SVG 재구조 · react-native-maps 의존 X" 정신과 완전 일관. native deps 추가 0 (react-native-svg 이미 존재). nearbyPois 의 lat/lng 는 현재 위치 중앙 기준으로 240px 미니맵 안에 normalize. POI 핀 24x24 (juhong/moss/celadon · 흰 보더 2px · 그림자 · 카테고리 아이콘 · DM Mono 9px 거리 라벨). bottom-sheet = @gorhom/bottom-sheet 또는 PanResponder + Reanimated (가벼운 옵션 우선). v1 "직전 제일" 명제 일치. real Google Maps SDK 는 v2 검토 (정밀 좌표·확대·실시간 트래픽 필요 시). ENG-PLAN line 685-690 갱신 |
+| 2026-05-15 | **D32: STT → 채팅 first (대화 탭 default = 텍스트, 음성 모드 v2 후순위)** | Phase 4d 머지 후 사용자 product direction 재정의 — *"STT 말고 채팅으로 대화하는걸로"*. 기존 Phase 5a 의 "음성 모드 default + 일기 모드 옵션" 흐름을 역전 → **채팅 모드 default + 음성 모드 v2 후순위**. 이유: (a) 친구가 옆에서 같이 짜는 결 — 텍스트 채팅이 더 자연스러운 호흡, (b) v1 검증 가능성 — STT/edge-tts/Clova/AirPods/백그라운드 모드 entitlement 미해결 의존성 묶음 제거, (c) Apple Developer 계정·Clova 키 비동기 대기 시간 단축. 영향: Phase 5a 명세 전면 갱신 (Day 22-25 → Day 22-23 채팅 2일). 음성 모드는 SCENARIO 07-VOICE 로 v2 lock (design-preview line 2219 유지하나 v2 표시). 우상단 mic 아이콘은 visual placeholder (opacity 0.5 disabled). 친구 톤 텍스트 응답은 기존 LLM (`recommendPois`/`recommendCities`/`recommendTripPois`/`recommendRoutes`) + 신규 chat-conversation LLM 함수로 통합. design-preview line 2316-end 에 SCENARIO 07-CHAT 신규 추가 (CHAT default 명시) + SCENARIO 07-VOICE/DIARY 는 기존 위치 유지 (v2 spec 으로) |
+| 2026-05-15 | **D33: SCENARIO 02.5 — 날짜 + 일자별 날씨 (TRIP START → SCENARIO 03 사이 신규 step)** | 사용자 요청: *"날짜 짜는거에 얼마나 갈건지 그거에대한 날씨 정보"*. TRIP START 의 도시 선택 후 즉시 SCENARIO 03 (POI) 로 갔던 흐름에 신규 step 끼움 — *날짜 선택 + 일자별 날씨 예보*. design-preview line ~2375 의 SCENARIO 02.5 markup 직역: 3 day 가로 row (date + 온도 Fraunces italic + 날씨 아이콘 + 라벨), 비 오는 day 는 amber border + amber tint bg, 친구 톤 voice "둘째 날 비 좀 있어요. 실내 위주로 짜놨어요" (LLM 이 일자별 날씨 인식 후 POI 큐레이션). CTA "이렇게 가요" → SCENARIO 03 진입. 자유 입력 "하루만 갈래요" / "더 머물래요" 로 일수 조정. 신규 backend route `/api/weather/forecast` (OpenWeather 3-day forecast). frontend `services/weather.ts` 의 `fetchForecast(city, startDate, endDate)` (시그니처 freeze 외 — 신규 함수). Phase 4 의 sub-phase 신설: Phase 4e (날짜 + 일자별 날씨, Day 22). SCENARIO 03 헤더 카운터 "{♥수} / {LLM프롬프트전체수}" 그대로 + 날씨 메타 한 줄 (예: "수 비 14°") |
+| 2026-05-15 | **D34: SCENARIO 08 — 대화로 동선 변경 (채팅 안 인라인 동선 카드)** | 사용자 요청: *"대화를 통해 어디가고싶다라고하면 그거 추가해서 동선 변경해주고"*. 채팅 모드 (D32) 안에서 사용자 발화 ("정동진도 가고 싶어") → LLM intent 감지 ('add_poi') → 동선 자동 재계산 → **인라인 동선 카드** 채팅 안 표시. 카드 = 미니맵 그라데이션 (48px height) + 시간 별 stops list (오전/점심/오후/저녁) + 새로 추가된 stop 주홍 강조 + 무드 stats (시간 변화 +30 · stops · moodLabel). CTA "이대로" / "다른 곳도". 신규 backend LLM 함수 `update-route.ts` (D22 factory · 입력 `{currentRoute, addRequest, userStyle}` · 출력 `LLMRouteUpdate`) + intent extraction 의 `add_poi` action. design-preview line ~2425 의 SCENARIO 08 markup. Phase 5c (Day 24) 신설. 기존 SCENARIO 04 (Plan A/B/C 초기 선택) 와 분리 — 이건 진행 중 dynamic update |
+| 2026-05-15 | **D35: 홈 탭 강화 — 일자별 날씨 위젯 + 최근 대화 진입점 (SHELL B')** | 사용자 요청: *"/home의 기능들 다 구현"*. 기존 SHELL B (홈) 의 dummy 부분 + 신규 기능 통합: (a) 진행 중 여행 카드 (next-trip → `Day N / Total`, "안목 해변 → 경포대" 같은 다음 stop preview), (b) **3 day 일자별 날씨 위젯** (작은 카드 row, 비 day amber border), (c) **최근 대화 진입점** (어제/오늘 마지막 동행 발언 preview + "→ 이어서" celadon 텍스트, 탭 → 대화 탭 navigate · 채팅 history 자동 scroll-to-bottom), (d) quick-grid 2 카드만 (단순화 — "새로 짜기" + "동선 보기"), (e) ambient 가 일자별 날씨 인식 ("내일 비 와요. 실내로 바꿔둘게요"). frontend `app/(tabs)/home.tsx` 갱신 (SHELL B 매핑 → SHELL B'). Phase 4f (Day 25) 신설. design-preview line ~2475 의 SHELL B' markup |
+| 2026-05-15 | **D36: 온보딩 화면 (탭바 없음) — 앱 첫 진입 + 권한** | 사용자 요청: *"하단 네비 없는거 추가"*. 앱 첫 진입 시 탭바 없는 풀스크린 onboarding. 중앙 큰 잉크 마크 + "옆에서 같이 짜볼게요" (Noto Serif KR 24px) + "친구가 옆에서 같이 여행 짜주는 결. 음성 X. 텍스트로 천천히." 권한 카드 2개 (위치 · 알림, "선택" 라벨로 강제 X). "시작할게요" CTA → 홈 진입. design-preview line ~2320 의 SCENARIO 00 markup (탭바 없음 명시). 마이크 권한 X (D32 채팅 first 일관). 신규 `app/onboarding.tsx` (또는 `app/index.tsx` 첫 진입 시 권한 미설정이면 onboarding 자동 navigate). `useSession` zustand 에 `onboarded?: boolean` 옵셔널 추가 (D12 옵셔널 룰). Phase 4g (Day 26) 신설 |
 
 ---
 
-**Status: APPROVED + Phase 4 재정의 (2026-05-14, D1-D30 반영, D24 skip) — Phase 4a (현장 컴패니언, PR #5 머지) 완료 후 사용자 manual UX 검증 중 흐름 mismatch 발견 → plan-design-review 1차 (6/10 → 9/10) → Phase 4 = "여행 탭 4 모드 state machine" 으로 재정의. ON-TRIP COMPANION 산출물 (Phase 4c) 그대로 유지, 진입점만 mode router 로 재배치. 다음 Phase 4a' (TRIP START + SCENARIO 03 POI 큐레이션, Day 9-12) 진입. 잔여 ~3.5주 (Phase 4 +7일).**
+**Status: APPROVED + v1.5 redesign (2026-05-15, D1-D36 반영, D24 skip) — Phase 4a-4d 머지 후 사용자 product direction 재정의: STT → 채팅 first (D32) · 날짜+일자별 날씨 SCENARIO 02.5 (D33) · 대화로 동선 변경 SCENARIO 08 (D34) · 홈 탭 강화 SHELL B' (D35) · 온보딩 탭바없음 (D36). Phase 5+ 재정의 (5a 채팅 / 5b 음성 v2 / 4e 날짜·날씨 / 4f 홈 강화 / 4g 온보딩). 잔여 ~2주 (v1 채팅 기준).**
 
 ---
 
@@ -1118,7 +1224,7 @@ GET  /health            → { "ok": true }
 
 **UNRESOLVED:** 2 (production hosting + production LLM provider — Phase 7 결정)
 
-**VERDICT:** ENG CLEARED (6th, D9-D30, D24 skip) + DESIGN CLEARED (1st, plan-design-review) — Phase 1-4c 실측 완료 (Phase 4c = 구 Phase 4a, PR #5 ON-TRIP COMPANION 머지) + Phase 4 재정의 plan 9/10 lock. 여행 탭 = 4 모드 state machine (TRIP START / SCENARIO 03 POI 큐레이션 / SCENARIO 04 동선 선택 / ON-TRIP COMPANION). 기존 Phase 4a 산출물 8 파일 폐기 X — 진입점만 mode router 로 재배치. **Phase 4a' (TRIP START + SCENARIO 03, Day 9-12)** 진입 가능 → Phase 4b' (SCENARIO 04, Day 13-15) → Phase 4d (지도 모달, Day 16-17) → Phase 5 (TTS, Day 22-25) → Phase 6 (본인 검증) → Phase 7 (TestFlight). 잔여 ~3.5주 (Phase 4 +7일).
+**VERDICT:** ENG CLEARED (6th, D9-D36, D24 skip) + DESIGN CLEARED (2nd, v1.5 redesign) — Phase 1-4d 실측 완료 + v1.5 product direction 재정의 (D32-D36). 채팅 first + 날짜·날씨 + 대화로 동선 변경 + 홈 강화 + 온보딩 5 변경. design-preview line 2319+ 의 ★ v1.5 추가 시나리오 5 화면 lock. **다음 Phase 4e (날짜+일자별 날씨, Day 22) → 4f (홈 강화, Day 23) → 4g (온보딩, Day 24) → 5a (채팅, Day 25-26)** → Phase 6 (검증) → Phase 7 (TestFlight). 잔여 ~2주 (v1 채팅 기준). 음성 모드 (SCENARIO 07-VOICE) 는 v2 후순위로 lock.
 
 **D9-D23 추가사항:**
 - Tech Stack: **Turborepo** + bun workspaces + Docker Compose + Expo Web + **husky 9 + GitHub Actions** (D11 Day 2b 중 simple-git-hooks → husky 교체)
@@ -1138,3 +1244,5 @@ GET  /health            → { "ok": true }
 - **Phase 3.5 plan-eng-review 결과** (2026-05-14, D22-D23 추가): plan-eng-review 4 결정 lock — (D1') true strangler fig (innovation token 0, 일정 영향 +1일만) · (D2') createLLMFunction + 명시적 export 패턴 · (D3') backend/server/llm/ 구조 + zod + docs/AGENTS.md 신규 · (D4') Phase 3.5 신설 + promptfoo eval 포함 (Day 9). 사용자 핵심 명확화: **OSS = 에이전트 오케스트레이션 패턴** (TypeScript + zod + factory + Anthropic function calling 호환 spec + promptfoo eval). 모델은 Claude 그대로 (D9-b reaffirm via D23) — *비전 ≠ 모델 교체, 비전 = 도구화 패턴*. **D24 (OSS LLM 마이그레이션 v1.1) 폐기** — 사용자 비전 아니었음. wrapper 추상화는 *교체 옵션* 으로 유지하되 요구사항 아님. Build Steps: backend/server/llm/{factory,invoke-claude,prompts,schemas}.ts + functions/{recommend-cities,recommend-pois}.ts + shared/types/src/agent.ts + docs/AGENTS.md + eval/{promptfoo.yaml, recommend-cities.eval.ts, recommend-pois.eval.ts}. 기존 routes/llm.ts 702줄 → ~50줄 (~85% 감소, DRY). frontend orchestrator 무변경 (SSE format 유지). 친구 톤 baseline 회귀 안전망 = promptfoo eval. 브랜치: `feat/llm-fn-pattern`
 - **Phase 4a (현장 컴패니언 카드 뷰 v1) 완료** (2026-05-14, D25-D26 추가, PR #5 / commit d37d174): Lane F+B+T 병렬 spawn 패턴 재사용 (Phase 3 패턴 그대로). Lane F (frontend 8 파일) — `app/companion.tsx` (GPS → nearbyPois → streamRecommendation → MomentCard render · POI 1km/5분 useRef 캐시 · weather 1시간 poll foreground only · alertQueue subscribe → resolveNextCard 카드 swap · 3 fallback (permission/offline/hallucination) → AWAY 친구 톤 voice) · `app/(tabs)/travel.tsx` (여행 탭 = Companion inline) · `components/moment-card.tsx` (4 variant: NORMAL `lineSoft` 1px / ALERT amber 배너 + 1px / RESCUE 2px juhong 희소 / AWAY opacity 0.55 dimmed) · `services/companion/{card-resolver,state}.ts` · `services/location.ts` (expo-location 19.0.8 통합, 50m/30s subscribe) · `services/poi.ts` (nearbyPois body) · `services/companion/card-resolver.test.ts` (bun test 14 케이스 pass — D6 state machine 8 전이 + AWAY 직교 + edge case 6). Lane B (backend) — `routes/weather.ts` (OpenWeather Forecast 통합, shape freeze `{raining,tempC,alertWindowMin}` · 키 미설정 503 · 401/429/5xx silent fallback · invalid lat/lng 400). Lane T (TTS) — readiness only, 코드 변경 0 (edge-tts 6.1.18 컨테이너 healthy, Phase 5a 진입 대비). **Phase 3.5 폴리시 commit 1개 동행 머지** (4bb74b8) — SCENARIO 02 SkeletonShimmer 1500ms + 도시 카드 그라데이션 4종 순환 (바다 청자 / 녹청→청자 / 녹청→황 / 청자→녹청) + whitelist 토큰 split (`isKoreanCity` — "서울 성수" / "부산 해운대" / "설악산 속초" 통과). 검증 all clean (typecheck 4/4 · lint 91 files clean · bun test 14 pass · docker server+tts healthy · curl `/api/weather?lat=37.5&lng=127.0` → 실 응답 서울 31.4°C `hallucinationDetected:false` · design-guard CRITICAL 0 (MEDIUM 5 theme alpha 토큰 부재 Phase 5+ 보강 권장) · scaffold-guard CRITICAL 0 (LOW 1 `alertCopy?` 옵셔널, D26 으로 lock) · CI 3 check pass). 회고: D25 (`.test.ts` 신규 freeze 외 룰 명시적 lock) + D26 (`MomentCardProps.alertCopy?` 옵셔널 D12 룰 재확인, `TagChipProps.onPress?` 와 동일 패턴). manual UX 잔여: 디바이스에서 4 카드 타입 모두 발생시켜 확인 (NORMAL · ALERT · RESCUE · AWAY) · hallucination 가짜 데이터로 AWAY fallback · weather 1시간 후 ALERT 자동 swap · `OPENWEATHER_KEY` 환경변수 `.env` 추가. 다음 Phase 4b (지도 모달 C · Day 13-14, react-native-maps + bottom-sheet + ⊕ toggle)
 - **Phase 4 재정의 — plan-design-review 1차** (2026-05-14, D27-D30 추가): 사용자 manual UX 검증 중 *큰 갭 발견* — `(tabs)/travel.tsx = Companion (GPS 실시간 카드)` 매핑이 design-preview 의 *짜는 단계* (SCENARIO 03/04 POI 큐레이션 + 동선 선택) 를 누락. 사용자 지적 *"여행 탭이 SCENARIO 03 이거든 recommend 에서 선택한 여행지에 대한 장소들을 추천해주는거야 너가 지금 전혀 파악을 못하고 있어 SCENARIO 04 는 그거에 맞게 동선들 추천해주는거고"*. design-preview line 1660-1799 (SCENARIO 03/04) + line 1872-1957 (★ TRIP START + ★ ON-TRIP COMPANION) 정독 → **여행 탭 자체가 4 모드 state machine** 확정. 인프라 사이드 fix: `useUserStyle` selector 무한 rerender (zustand 5 selector 매번 새 객체 반환 → useSyncExternalStore "getSnapshot should be cached" infinite loop) — `useShallow` wrap 으로 해결 (commit 2308fd9, feat/live-map). plan-design-review 1차 (6/10 → 9/10) 통해 8 결정 lock: D27 (mode router · 4 모드 state machine) · D28 (TRIP START 정확 매핑 · 3 경로 동시 제공 · 분위기 = 결 1개 자동) · D29 (12/23 카운터 = 좋아요/LLM 프롬프트 전체 · ♥≥3 진입 + voice 고목 · "A로 갈래요" → 즉시 ON-TRIP seamless · 색 그라데이션 미니맵 react-native-maps 의존 X) · D30 (Phase 4 sub-phase 재편 4a'/4b'/4c/4d). 기존 Phase 4a (=Phase 4c) 산출물 8 파일 *그대로 유지* — 진입점만 mode router 가 `planning_step === 'on_trip'` 일 때 inline mount. 신규 LLM 함수 2개 spec lock (`recommend-trip-pois.ts` + `recommend-routes.ts`, D2 정신 + D22 factory 패턴). 신뢰 회복 패턴 = D19/D20/D21 (Phase 3 SCENARIO 02 mismatch fix) 의 더 큰 버전 — design-preview 와 *완전 일치* 까지 정렬. Phase 4 +7일 (4a' ~4일 + 4b' ~3일), 총 잔여 ~3.5주. 다음 Phase 4a' (TRIP START + SCENARIO 03 POI 큐레이션, Day 9-12) 진입
+- **Phase 4b' (SCENARIO 04 동선 선택) 완료** (2026-05-15, PR #7 / merge commit c84cbf8): Lane F+B+T 병렬 spawn 패턴 재사용 (Phase 3/4a 패턴 그대로). Lane B (backend) — 신규 LLM 함수 `recommend-routes.ts` (D22 factory + D2 postValidate `stops.poi_id ⊂ likedPoiIds` 검증 + mockFallback 시드 없이 결정적 3 plan) · `LLMRoute` + `LLMRouteList` + `LLMRouteStop` interface + zod schemas (shared/types) · `ROUTES_FRAGMENT` 친구 톤 prompt · `POST /api/llm/routes` SSE (start → raw → final → done) · eval 10/10 pass. Lane F (frontend 6 신규 파일) — `components/route-select.tsx` (헤더 "동선 세 갈래" + voice "결이 끌려요?" + 3 카드 + initial selected='A' + CTA "{letter}로 갈래요" → `setPlanningStep('on_trip')` seamless) · `components/route-card.tsx` (design-preview .route-card 직역: padding 14 · radius cardLarge · name 좌 Noto Serif 15px / Plan letter 우 Fraunces italic 13px · stats DM Mono 11px "{Nh} 이동 · {N} stops · − {moodLabel} ★★★" · selected = celadon border + celadonTint bg) · `components/gradient-mini-map.tsx` (height 56 · 110deg 3-stop LinearGradient + react-native-svg RadialGradient 광원 2개 overlay · letter 별 색 A 청자단방향 / B 녹청→황 / C 주홍→황→청자 · design-preview CSS line 444-446 hex 직역 · **react-native-maps 의존 X — D29 정신**) · `services/companion/llm-orchestrator.ts` 의 `streamRoutes` AsyncGenerator (SSE 파싱 + USE_MOCKS 분기) · `services/__mocks__/api/llm-routes.json` (moodLabel 차분함/들뜸/침잠) · `(tabs)/travel.tsx` RouteSelect mount. Lane T — readiness only, 코드 변경 0. **polish commit 2번** (PR #7 안): 초기 commit `f513851` 후 사용자 design-preview matching 지시 → commit `fd79ee6` 추가 (design-preview line 1741-1799 + CSS 421-455 직역). `LLMRoute.moodLabel?: string` 옵셔널 추가 (D12 옵셔널 룰) + prompt 에 mood 이름 규칙 + `theme.celadonTint` 토큰 추가. 실 LLM 검증 (curl `/api/llm/routes` 강릉 4 likedPoiIds): A "잔잔" ★4 / B "노을" ★5 / C "고요" ★4 — 친구 톤 자연스럽게 풀림, hallucinationDetected=false. 검증 all clean (typecheck 3/3 cached · lint 101 files clean · eval 10/10 pass · docker server+tts healthy · design-guard CRITICAL 0 / HIGH 0 — MEDIUM 2 (gradient hex stops + radial overlay 모두 design-preview 직역 의도) + LOW 3 (inline spacing 일치 목적) · scaffold-guard CRITICAL 0 / HIGH 0 / MEDIUM 0 / LOW 0 — D12 옵셔널 룰 정직 준수 · CI 3 checks pass). 회고: D29 의 polish 가 D19/D20/D21 패턴의 자연스러운 follow-up — 초기 구현 → 사용자 design-preview 매칭 지시 → 직역 polish 의 2-step 신뢰 회복 패턴. `LLMRoute.moodLabel?` 옵셔널 추가가 `MomentCardProps.alertCopy?` (D26) · `TagChipProps.onPress?` (D19) 와 동일 D12 룰 적용. manual UX 잔여: 디바이스에서 강릉 → POI ≥3 좋아요 → 3 카드 색 그라데이션 + Plan letter Fraunces italic + stats 친구 톤 mood 확인 · "A로 갈래요" 즉시 ON-TRIP seamless 확인. 다음 Phase 4d (지도 모달 C ⊕ · react-native-maps + @gorhom/bottom-sheet + ON-TRIP 우상단 ⊕ 토글, Day 16-17, ~2 day)
+- **v1.5 product direction 재정의 (D32-D36 추가)** (2026-05-15, Phase 4d 머지 후 사용자 지시): *"하단 네비 없는거 추가하고 home의 기능들 다 구현하고 지금은 stt말고 채팅으로 대화하는걸로 그리고 날짜 짜는거에 얼마나 갈건지 그거에대한 날씨 정보 동선 변경 기능 대화를 통해 어디가고싶다라고하면 그거 추가해서 동선 변경해주고"*. 5 결정 lock: D32 (STT → 채팅 first · 음성 모드 v2 후순위) · D33 (SCENARIO 02.5 날짜+일자별 날씨) · D34 (SCENARIO 08 대화로 동선 변경) · D35 (홈 강화 SHELL B') · D36 (온보딩 탭바없음). design-preview line 2319+ 에 ★ v1.5 추가 시나리오 5 화면 신규 (SCENARIO 00 온보딩 · SCENARIO 02.5 날짜+날씨 · SCENARIO 07-CHAT · SCENARIO 08 동선 변경 · SHELL B' 홈) + SVG defs i-pin/i-bell/i-cloud/i-rain/i-sun 추가. Phase 5+ 재정의: **Phase 4e (날짜+일자별 날씨, Day 22) → Phase 4f (홈 강화, Day 23) → Phase 4g (온보딩, Day 24) → Phase 5a (채팅, Day 25-26)** → Phase 6 (검증) → Phase 7 (TestFlight). 신규 backend route `/api/weather/forecast` (OpenWeather 3-day) + 신규 LLM 함수 `update-route.ts` (D22 factory · intent 'add_poi' 감지 후 동선 재계산 · `LLMRouteUpdate` 출력) + intent 확장 (Phase 5a 의 chat 안 'add_poi'/'remove_poi'/'change_day' 등). v1 검증 가능성 향상: STT/edge-tts/Clova/AirPods/백그라운드 모드 entitlement 비동기 의존성 묶음 → v2 로 미룸. 잔여 ~2주 (음성 v2 별도). 다음 Phase 4e 진입 (Lane F+B 병렬 — frontend 날짜·날씨 UI + backend `/api/weather/forecast`)
