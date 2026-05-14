@@ -11,7 +11,8 @@
         { "poi_id": "mock-004", "order": 4 }
       ],
       "travelMin": 240,
-      "moodStars": 3
+      "moodStars": 3,
+      "moodLabel": "차분함"
     },
     {
       "letter": "B",
@@ -23,7 +24,8 @@
         { "poi_id": "mock-003", "order": 3 }
       ],
       "travelMin": 180,
-      "moodStars": 3
+      "moodStars": 3,
+      "moodLabel": "들뜸"
     },
     {
       "letter": "C",
@@ -35,7 +37,8 @@
         { "poi_id": "mock-004", "order": 3 }
       ],
       "travelMin": 120,
-      "moodStars": 4
+      "moodStars": 4,
+      "moodLabel": "침잠"
     }
   ],
   "note": "결 다른 세 갈래에요. 끌리는 쪽으로 가요"

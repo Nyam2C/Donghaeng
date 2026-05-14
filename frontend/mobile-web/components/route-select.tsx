@@ -106,7 +106,9 @@ export function RouteSelect({ trip }: RouteSelectProps) {
   const setPlanningStep = useTrip((s) => s.setPlanningStep)
 
   const [state, setState] = useState<RouteSelectState>({ status: 'loading' })
-  const [selectedLetter, setSelectedLetter] = useState<'A' | 'B' | 'C' | null>(null)
+  // design-preview line 1753 의 .route-card.selected 가 Plan A —
+  // 첫 진입 시 Plan A default 선택 → CTA 즉시 활성. 사용자가 탭하면 변경.
+  const [selectedLetter, setSelectedLetter] = useState<'A' | 'B' | 'C'>('A')
   const abortRef = useRef<AbortController | null>(null)
 
   const hasEnoughLikes = userStyle.likedPoiIds.length >= REQUIRED_LIKES
@@ -167,7 +169,7 @@ export function RouteSelect({ trip }: RouteSelectProps) {
   }, [setPlanningStep])
 
   const selectedRoute: LLMRoute | null =
-    state.status === 'ready' && selectedLetter
+    state.status === 'ready'
       ? (state.data.routes.find((r) => r.letter === selectedLetter) ?? null)
       : null
 
@@ -257,7 +259,7 @@ export function RouteSelect({ trip }: RouteSelectProps) {
         </Pressable>
       ) : null}
 
-      {/* loading skeleton — 3 카드 placeholder */}
+      {/* loading skeleton — 3 카드 placeholder (실제 카드 padding 14 / 미니맵 56 매칭) */}
       {hasEnoughLikes && state.status === 'loading'
         ? [0, 1, 2].map((i) => (
             <View
@@ -267,56 +269,66 @@ export function RouteSelect({ trip }: RouteSelectProps) {
                 borderRadius: radius.cardLarge,
                 borderWidth: 1,
                 borderColor: lightColors.line,
-                overflow: 'hidden',
-                marginBottom: spacing.md,
+                padding: 14,
+                marginBottom: 10,
                 opacity: 0.6,
               }}
             >
+              {/* head row 자리 */}
               <View
                 style={{
-                  width: '100%',
-                  height: 96,
-                  backgroundColor: lightColors.celadonSoft,
-                  overflow: 'hidden',
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  marginBottom: 10,
                 }}
               >
-                <SkeletonShimmer width={360} height={96} />
-              </View>
-              <View style={{ padding: spacing.md, gap: 8 }}>
                 <View
                   style={{
-                    height: 16,
-                    width: '50%',
-                    borderRadius: 4,
-                    backgroundColor: lightColors.celadonSoft,
-                    overflow: 'hidden',
-                  }}
-                >
-                  <SkeletonShimmer width={180} height={16} />
-                </View>
-                <View
-                  style={{
-                    height: 11,
-                    width: '70%',
-                    borderRadius: 4,
-                    backgroundColor: lightColors.lineSoft,
-                    overflow: 'hidden',
-                  }}
-                >
-                  <SkeletonShimmer width={260} height={11} />
-                </View>
-                <View
-                  style={{
-                    height: 11,
+                    height: 15,
                     width: '40%',
                     borderRadius: 4,
                     backgroundColor: lightColors.lineSoft,
                     overflow: 'hidden',
-                    marginTop: 4,
                   }}
                 >
-                  <SkeletonShimmer width={140} height={11} />
+                  <SkeletonShimmer width={140} height={15} />
                 </View>
+                <View
+                  style={{
+                    height: 13,
+                    width: 48,
+                    borderRadius: 4,
+                    backgroundColor: lightColors.lineSoft,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <SkeletonShimmer width={48} height={13} />
+                </View>
+              </View>
+              {/* 미니맵 자리 (56) */}
+              <View
+                style={{
+                  width: '100%',
+                  height: 56,
+                  borderRadius: 8,
+                  backgroundColor: lightColors.celadonSoft,
+                  overflow: 'hidden',
+                  marginBottom: 10,
+                }}
+              >
+                <SkeletonShimmer width={320} height={56} />
+              </View>
+              {/* stats 자리 */}
+              <View
+                style={{
+                  height: 11,
+                  width: '60%',
+                  borderRadius: 4,
+                  backgroundColor: lightColors.lineSoft,
+                  overflow: 'hidden',
+                }}
+              >
+                <SkeletonShimmer width={200} height={11} />
               </View>
             </View>
           ))
@@ -363,14 +375,14 @@ export function RouteSelect({ trip }: RouteSelectProps) {
         </Pressable>
       ) : null}
 
-      {/* CTA "{name}로 갈래요" */}
+      {/* CTA "{letter}로 갈래요" — design-preview line 1789 그대로 */}
       {hasEnoughLikes && state.status === 'ready' ? (
         <Pressable
           onPress={selectedRoute ? handleStart : undefined}
           disabled={!selectedRoute}
           accessibilityRole="button"
           accessibilityLabel={
-            selectedRoute ? `${selectedRoute.name}로 떠나기` : '동선을 먼저 골라주세요'
+            selectedRoute ? `Plan ${selectedRoute.letter}로 떠나기` : '동선을 먼저 골라주세요'
           }
           accessibilityState={{ disabled: !selectedRoute }}
           style={({ pressed }) => ({
@@ -391,7 +403,7 @@ export function RouteSelect({ trip }: RouteSelectProps) {
               color: selectedRoute ? lightColors.bgElev : lightColors.textSoft,
             }}
           >
-            {selectedRoute ? `${selectedRoute.name}로 갈래요` : '동선을 골라주세요'}
+            {selectedRoute ? `${selectedRoute.letter}로 갈래요` : '동선을 골라주세요'}
           </Text>
         </Pressable>
       ) : null}

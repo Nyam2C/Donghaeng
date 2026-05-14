@@ -22,6 +22,7 @@ export const light = {
   celadon: '#4A6FA5', // 메인 액센트 · 청자
   celadonSoft: '#6B89B5',
   celadonDeep: '#2E4E7F',
+  celadonTint: 'rgba(74, 111, 165, 0.08)', // selected 카드 fill · design-preview --celadon-tint
   // 보조 액센트 (희소 ↓)
   moss: '#5F8B6E', // 자연 · success
   amber: '#E8B860', // 주의 · 돌발변수
@@ -43,6 +44,7 @@ export const dark = {
   celadon: '#88A5D4',
   celadonSoft: '#6B89B5',
   celadonDeep: '#5778AE',
+  celadonTint: 'rgba(136, 165, 212, 0.10)', // selected 카드 fill · design-preview dark --celadon-tint
   // 보조
   moss: '#88B098',
   amber: '#E8C680',

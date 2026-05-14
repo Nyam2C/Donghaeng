@@ -195,6 +195,25 @@ function assertRoutes(rec: LLMRouteList, likedPoiIds: string[]): AssertResult[] 
     msg: `stops 3-8 + order 1-based (bad=${badStops.length})`,
   })
 
+  // 11. moodLabel — mockFallback path 는 *전부* 있어야 (eval 은 Claude 없는 환경
+  //     에서 돌기 때문에 사실상 모두 mockFallback). 1-10자 + 격식 표현 X.
+  const missingMood = rec.routes.filter(
+    (r) => !r.moodLabel || r.moodLabel.length < 1 || r.moodLabel.length > 10,
+  )
+  results.push({
+    pass: missingMood.length === 0,
+    msg: `moodLabel 1-10자 (missing/bad=${missingMood.length})`,
+  })
+
+  // 12. moodLabel 격식 표현 X (친구 톤)
+  const formalMood = rec.routes.filter(
+    (r) => r.moodLabel && FORBIDDEN_PHRASES.some((p) => r.moodLabel?.includes(p)),
+  )
+  results.push({
+    pass: formalMood.length === 0,
+    msg: `moodLabel 격식 X (bad=${formalMood.length})`,
+  })
+
   return results
 }
 

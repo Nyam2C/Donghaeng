@@ -50,6 +50,9 @@ export interface LLMRoute {
   stops: LLMRouteStop[] // 3-6 stops, poi_id ⊂ likedPoiIds
   travelMin: number // 총 이동 시간 (분, 60-360)
   moodStars: number // 1-5 무드 별점 (정수)
+  /** D29 polish — design-preview 의 stats 표기 "차분함 ★★★" 의 mood 이름.
+   *  옵셔널 — 기존 caller 0 영향. 미설정 시 frontend 는 별점만 표시. */
+  moodLabel?: string
 }
 
 export interface LLMRouteList {

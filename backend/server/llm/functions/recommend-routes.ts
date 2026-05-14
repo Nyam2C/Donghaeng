@@ -46,6 +46,7 @@ function mockRoutes(input: RecommendRoutesInput): LLMRouteList {
       stops: aStops,
       travelMin: 180,
       moodStars: 4,
+      moodLabel: '차분함',
     },
     {
       letter: 'B',
@@ -54,6 +55,7 @@ function mockRoutes(input: RecommendRoutesInput): LLMRouteList {
       stops: bStops,
       travelMin: 200,
       moodStars: 4,
+      moodLabel: '들뜸',
     },
     {
       letter: 'C',
@@ -62,6 +64,7 @@ function mockRoutes(input: RecommendRoutesInput): LLMRouteList {
       stops: cStops,
       travelMin: 120,
       moodStars: 5,
+      moodLabel: '침잠',
     },
   ]
 

@@ -112,6 +112,7 @@ export const LLMRouteSchema = z.object({
   stops: z.array(LLMRouteStopSchema).min(3).max(8),
   travelMin: z.number().int().min(30).max(720),
   moodStars: z.number().int().min(1).max(5),
+  moodLabel: z.string().min(1).max(10).optional(),
 })
 
 export const LLMRouteListSchema = z.object({
