@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useShallow } from 'zustand/react/shallow'
 
 import type { GpsCoord, KakaoPOI, MomentCard as MomentCardType } from '@trip/types'
 
@@ -84,11 +85,15 @@ const ALERT_COPY: Record<'weather' | 'poi-closed', string> = {
 export default function Companion() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
-  const userStyle = useUserStyle((s) => ({
-    tags: s.tags,
-    likedPoiIds: s.likedPoiIds,
-    dislikedPoiIds: s.dislikedPoiIds,
-  }))
+  // useShallow: zustand 5 selector 가 매 render 마다 새 객체 반환 → useSyncExternalStore
+  // "getSnapshot should be cached" 무한 rerender. shallow equality 로 reference 안정화.
+  const userStyle = useUserStyle(
+    useShallow((s) => ({
+      tags: s.tags,
+      likedPoiIds: s.likedPoiIds,
+      dislikedPoiIds: s.dislikedPoiIds,
+    })),
+  )
   const alertQueue = useSession((s) => s.alertQueue)
   const glow = useSession((s) => s.glow)
   const { pushAlert, acknowledgeAlert, setGlow } = useCompanionActions()
