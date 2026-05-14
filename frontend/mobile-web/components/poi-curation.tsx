@@ -1,6 +1,13 @@
 import { LinearGradient } from 'expo-linear-gradient'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated'
 import { useShallow } from 'zustand/react/shallow'
 
 import type { LLMTripPoiList, Trip, TripPoiCandidate } from '@trip/types'
@@ -51,6 +58,47 @@ const DEFAULT_THUMB_GRADIENT: ThumbGradient = ['#6B89B5', '#4A6FA5', '#2E4E7F']
 
 function gradFor(category: string): ThumbGradient {
   return CATEGORY_GRADIENTS[category] ?? DEFAULT_THUMB_GRADIENT
+}
+
+/**
+ * Skeleton shimmer overlay — 좌→우 빛 흐름 (1500ms). recommend.tsx 의 동일 패턴.
+ * 자식 element 의 위에 절대 위치로 덮음. parent 가 overflow:hidden 이어야 깔끔.
+ */
+function SkeletonShimmer({ width, height }: { width: number; height: number }) {
+  const x = useSharedValue(-width)
+  useEffect(() => {
+    x.value = -width
+    x.value = withRepeat(
+      withTiming(width * 2, { duration: 1500, easing: Easing.linear }),
+      -1,
+      false,
+    )
+  }, [x, width])
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateX: x.value }],
+  }))
+  return (
+    <View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width,
+        height,
+        overflow: 'hidden',
+      }}
+    >
+      <Animated.View style={[{ position: 'absolute', top: 0, width: width * 0.6, height }, style]}>
+        <LinearGradient
+          colors={['transparent', 'rgba(255,255,255,0.35)', 'transparent']}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={{ width: '100%', height: '100%' }}
+        />
+      </Animated.View>
+    </View>
+  )
 }
 
 type CurationState =
@@ -241,7 +289,7 @@ export function PoiCuration({ trip }: PoiCurationProps) {
         </Text>
       </View>
 
-      {/* loading skeleton */}
+      {/* loading skeleton — shimmer overlay 적용 (1500ms 좌→우, recommend.tsx 동일 패턴) */}
       {state.status === 'loading'
         ? [0, 1, 2, 3].map((i) => (
             <View
@@ -252,7 +300,7 @@ export function PoiCuration({ trip }: PoiCurationProps) {
                 gap: spacing.sm + 4,
                 paddingVertical: spacing.sm + 2,
                 marginBottom: spacing.sm,
-                opacity: 0.45,
+                opacity: 0.55,
               }}
             >
               <View
@@ -261,8 +309,11 @@ export function PoiCuration({ trip }: PoiCurationProps) {
                   height: 64,
                   borderRadius: 10,
                   backgroundColor: lightColors.celadonSoft,
+                  overflow: 'hidden',
                 }}
-              />
+              >
+                <SkeletonShimmer width={64} height={64} />
+              </View>
               <View style={{ flex: 1, gap: 6 }}>
                 <View
                   style={{
@@ -270,16 +321,22 @@ export function PoiCuration({ trip }: PoiCurationProps) {
                     width: '45%',
                     borderRadius: 4,
                     backgroundColor: lightColors.celadonSoft,
+                    overflow: 'hidden',
                   }}
-                />
+                >
+                  <SkeletonShimmer width={180} height={14} />
+                </View>
                 <View
                   style={{
                     height: 10,
                     width: '70%',
                     borderRadius: 4,
                     backgroundColor: lightColors.lineSoft,
+                    overflow: 'hidden',
                   }}
-                />
+                >
+                  <SkeletonShimmer width={260} height={10} />
+                </View>
               </View>
             </View>
           ))
@@ -302,7 +359,6 @@ export function PoiCuration({ trip }: PoiCurationProps) {
       {state.status === 'ready'
         ? visiblePois.map((poi) => {
             const isLiked = userStyle.likedPoiIds.includes(poi.id)
-            const glyph = poi.name.trim().slice(0, 1) || '·'
             return (
               <View
                 key={poi.id}
@@ -314,7 +370,7 @@ export function PoiCuration({ trip }: PoiCurationProps) {
                   marginBottom: spacing.xs,
                 }}
               >
-                {/* thumb 64×64 카테고리별 그라데이션 + 첫 글자 흰 Noto Serif KR */}
+                {/* thumb 64×64 카테고리별 그라데이션 (design-preview 의 bg-poi-1~5 패턴 — 글자 X) */}
                 <LinearGradient
                   colors={[...gradFor(poi.category)]}
                   start={{ x: 0, y: 0 }}
@@ -323,21 +379,9 @@ export function PoiCuration({ trip }: PoiCurationProps) {
                     width: 64,
                     height: 64,
                     borderRadius: 10,
-                    alignItems: 'center',
-                    justifyContent: 'center',
                     flexShrink: 0,
                   }}
-                >
-                  <Text
-                    style={{
-                      fontFamily: fonts.family.voice,
-                      fontSize: 22,
-                      color: lightColors.bgElev,
-                    }}
-                  >
-                    {glyph}
-                  </Text>
-                </LinearGradient>
+                />
 
                 {/* info */}
                 <View style={{ flex: 1, minWidth: 0 }}>

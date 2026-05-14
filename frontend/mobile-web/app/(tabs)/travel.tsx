@@ -15,11 +15,13 @@ import Companion from '../companion'
  *
  * 분기:
  *  (1) active === null            → <TripStart />            (★ TRIP START)
- *  (2) active && step === 'pois'  → <PoiCuration />          (SCENARIO 03)
+ *  (2) active && step === 'pois' (또는 undefined) → <PoiCuration /> (SCENARIO 03)
  *  (3) active && step === 'routes'→ <RouteSelectPlaceholder />(Phase 4b' 임시)
- *  (4) active && step === 'on_trip'(또는 undefined) → <Companion /> (Phase 4c)
+ *  (4) active && step === 'on_trip'→ <Companion /> (Phase 4c)
  *
- * step undefined 도 'on_trip' 으로 해석 — legacy caller (`startTrip({city,...})` 만 호출하던) 호환.
+ * step undefined 는 'pois' 로 default — startTrip 만 호출된 케이스가 짜는 단계
+ * (SCENARIO 03) 부터 시작하는 게 자연스러운 흐름. 'on_trip' 은 명시적 진입만 (SCENARIO 04
+ * "A로 갈래요" 또는 RouteSelectPlaceholder skip).
  *
  * D27 의 mode router 가 가벼운 분기만 담당. companion.tsx 등 기존 산출물 변경 0.
  */
@@ -42,7 +44,7 @@ export default function Travel() {
     )
   }
 
-  const step = active.planning_step ?? 'on_trip'
+  const step = active.planning_step ?? 'pois'
 
   if (step === 'pois') {
     return (
