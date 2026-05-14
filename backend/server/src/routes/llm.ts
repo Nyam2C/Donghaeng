@@ -7,6 +7,7 @@ import { Hono } from 'hono'
 import { streamSSE } from 'hono/streaming'
 import { recommendCities } from '../../llm/functions/recommend-cities'
 import { recommendPois } from '../../llm/functions/recommend-pois'
+import { recommendRoutes } from '../../llm/functions/recommend-routes'
 import { recommendTripPois } from '../../llm/functions/recommend-trip-pois'
 
 const llmRoutes = new Hono()
@@ -165,6 +166,48 @@ llmRoutes.post('/trip-pois', async (c) => {
           },
         ],
         note: '잠깐, 후보를 다시 골라봤어요',
+      }
+      await stream.writeSSE({ event: 'final', data: JSON.stringify(fallback) })
+      await stream.writeSSE({
+        event: 'done',
+        data: JSON.stringify({ hallucinationDetected: false }),
+      })
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// POST /api/llm/routes — D29 SCENARIO 04 동선 선택 (Plan A/B/C)
+// ---------------------------------------------------------------------------
+llmRoutes.post('/routes', async (c) => {
+  let raw: unknown
+  try {
+    raw = await c.req.json()
+  } catch {
+    return c.json({ error: 'invalid JSON body' }, 400)
+  }
+
+  return streamSSE(c, async (stream) => {
+    const likedCount =
+      raw &&
+      typeof raw === 'object' &&
+      Array.isArray((raw as { likedPoiIds?: unknown }).likedPoiIds)
+        ? (raw as { likedPoiIds: unknown[] }).likedPoiIds.length
+        : 0
+    await stream.writeSSE({ event: 'start', data: JSON.stringify({ likedCount }) })
+
+    try {
+      const { result, hallucinationDetected, trace } = await recommendRoutes(
+        raw as Parameters<typeof recommendRoutes>[0],
+      )
+      await stream.writeSSE({ event: 'raw', data: JSON.stringify({ trace }) })
+      await stream.writeSSE({ event: 'final', data: JSON.stringify(result) })
+      await stream.writeSSE({ event: 'done', data: JSON.stringify({ hallucinationDetected }) })
+    } catch (err) {
+      console.warn('[llm/routes] recommendRoutes threw', err)
+      const fallback = {
+        routes: [] as unknown[],
+        note: '음, 잠깐만요. 동선을 다시 짜고 있어요.',
       }
       await stream.writeSSE({ event: 'final', data: JSON.stringify(fallback) })
       await stream.writeSSE({

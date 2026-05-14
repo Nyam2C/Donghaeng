@@ -94,3 +94,35 @@ export const RecommendTripPoisInputSchema = z.object({
 })
 
 export type RecommendTripPoisInput = z.infer<typeof RecommendTripPoisInputSchema>
+
+// ---------------------------------------------------------------------------
+// 동선 선택 (POST /api/llm/routes) — D29 SCENARIO 04
+// llm.ts: LLMRoute / LLMRouteList / LLMRouteStop
+// ---------------------------------------------------------------------------
+
+export const LLMRouteStopSchema = z.object({
+  poi_id: z.string().min(1),
+  order: z.number().int().min(1).max(20),
+})
+
+export const LLMRouteSchema = z.object({
+  letter: z.enum(['A', 'B', 'C']),
+  name: z.string().min(2).max(20),
+  reason: z.string().min(8).max(40),
+  stops: z.array(LLMRouteStopSchema).min(3).max(8),
+  travelMin: z.number().int().min(30).max(720),
+  moodStars: z.number().int().min(1).max(5),
+})
+
+export const LLMRouteListSchema = z.object({
+  routes: z.array(LLMRouteSchema).length(3),
+  note: z.string().min(8).max(50),
+})
+
+export const RecommendRoutesInputSchema = z.object({
+  city: z.string().min(1),
+  likedPoiIds: z.array(z.string().min(1)).min(3).max(30),
+  userStyle: UserStyleSchema,
+})
+
+export type RecommendRoutesInput = z.infer<typeof RecommendRoutesInputSchema>

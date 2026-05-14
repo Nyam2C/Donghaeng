@@ -34,3 +34,25 @@ export interface LLMTripPoiList {
   pois: TripPoiCandidate[] // LLM 이 제시한 전체 (D29 의 "12 / 23" 의 23)
   note: string // 친구 톤 멘트 (voice 인용 보완)
 }
+
+// D29 — SCENARIO 04 동선 선택 (POI 좋아요 ≥3 후 3 갈래 동선 추천)
+// 친구 톤 voice "선택지마다 리듬이 달라요. 어느 결이 끌려요?" 약속.
+// AI 가 likedPoiIds 만 stops 로 묶어서 3 갈래 동선 (Plan A/B/C) 제시.
+export interface LLMRouteStop {
+  poi_id: string // likedPoiIds ⊂ 검증 (D2)
+  order: number // 1-based, route 내 방문 순서
+}
+
+export interface LLMRoute {
+  letter: 'A' | 'B' | 'C' // Plan A/B/C
+  name: string // 결의 짧은 라벨 (5-12자, "바다 따라" / "빵집 도장깨기" / "한 곳 깊게")
+  reason: string // 친구 톤 짧은 이유 (15-30자)
+  stops: LLMRouteStop[] // 3-6 stops, poi_id ⊂ likedPoiIds
+  travelMin: number // 총 이동 시간 (분, 60-360)
+  moodStars: number // 1-5 무드 별점 (정수)
+}
+
+export interface LLMRouteList {
+  routes: LLMRoute[] // 정확히 3개 (A/B/C)
+  note: string // 친구 톤 멘트 (15-30자)
+}
