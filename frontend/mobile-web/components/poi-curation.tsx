@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { useShallow } from 'zustand/react/shallow'
@@ -36,6 +37,22 @@ const VOICE_ERROR = '잠깐 골라보고 있어요. 잠시 후 다시 시도해 
 const VOICE_LOADING = '여기서 어울릴 곳들 골라보고 있어요…'
 const REQUIRED_LIKES = 3
 
+// 카테고리별 thumb 그라데이션 — design-preview line 1660-1700 의 bg-poi-1~5 정신.
+// theme/colors.ts 에 alpha 토큰 부재라 inline 정의. Phase 5+ theme freeze 해제 시 토큰화 후보.
+type ThumbGradient = readonly [string, string, string]
+const CATEGORY_GRADIENTS: Record<string, ThumbGradient> = {
+  카페: ['#6B89B5', '#4A6FA5', '#2E4E7F'], // 바다 청자 (안목 해변 패턴)
+  맛집: ['#E8B860', '#C99A40', '#8E6A2A'], // 황 (시장 패턴)
+  관광: ['#88B098', '#5F8B6E', '#3A5A4A'], // 녹청 (자연 패턴)
+  문화: ['#88B098', '#4A6FA5', '#2E4E7F'], // 녹청→청자 (책방 패턴)
+  자연: ['#6B89B5', '#88B098', '#5F8B6E'], // 청자→녹청 (호수 패턴)
+}
+const DEFAULT_THUMB_GRADIENT: ThumbGradient = ['#6B89B5', '#4A6FA5', '#2E4E7F']
+
+function gradFor(category: string): ThumbGradient {
+  return CATEGORY_GRADIENTS[category] ?? DEFAULT_THUMB_GRADIENT
+}
+
 type CurationState =
   | { status: 'loading' }
   | { status: 'ready'; data: LLMTripPoiList }
@@ -61,7 +78,9 @@ export function PoiCuration({ trip }: PoiCurationProps) {
   const [promptText, setPromptText] = useState('')
   const abortRef = useRef<AbortController | null>(null)
 
-  // 도시 변경되면 cache invalidate — 새 도시로 streamTripPois 호출
+  // 도시 변경되면 cache invalidate — 새 도시로 streamTripPois 호출.
+  // dep 은 trip.city 만. userStyle 객체는 ♥/× 누를 때마다 새 ref 라서 dep 에 두면
+  // mount effect 가 매번 재실행 → LLM 재호출. 최신 userStyle 은 store 에서 직접 read.
   const fetchPois = useCallback(
     async (prompt: string) => {
       abortRef.current?.abort()
@@ -69,10 +88,15 @@ export function PoiCuration({ trip }: PoiCurationProps) {
       abortRef.current = controller
       setState({ status: 'loading' })
       try {
+        const current = useUserStyle.getState()
         const gen = streamTripPois({
           city: trip.city,
-          userStyle,
-          dislikedIds: userStyle.dislikedPoiIds,
+          userStyle: {
+            tags: current.tags,
+            likedPoiIds: current.likedPoiIds,
+            dislikedPoiIds: current.dislikedPoiIds,
+          },
+          dislikedIds: current.dislikedPoiIds,
           prompt,
         })
         let final: LLMTripPoiList | undefined
@@ -90,7 +114,7 @@ export function PoiCuration({ trip }: PoiCurationProps) {
         setState({ status: 'error' })
       }
     },
-    [trip.city, userStyle],
+    [trip.city],
   )
 
   useEffect(() => {
@@ -290,13 +314,15 @@ export function PoiCuration({ trip }: PoiCurationProps) {
                   marginBottom: spacing.xs,
                 }}
               >
-                {/* thumb 64×64 청자 단색 + 첫 글자 흰 Noto Serif KR */}
-                <View
+                {/* thumb 64×64 카테고리별 그라데이션 + 첫 글자 흰 Noto Serif KR */}
+                <LinearGradient
+                  colors={[...gradFor(poi.category)]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
                   style={{
                     width: 64,
                     height: 64,
                     borderRadius: 10,
-                    backgroundColor: lightColors.celadon,
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
@@ -311,7 +337,7 @@ export function PoiCuration({ trip }: PoiCurationProps) {
                   >
                     {glyph}
                   </Text>
-                </View>
+                </LinearGradient>
 
                 {/* info */}
                 <View style={{ flex: 1, minWidth: 0 }}>
