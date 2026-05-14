@@ -59,3 +59,9 @@ export interface LLMRouteList {
   routes: LLMRoute[] // 정확히 3개 (A/B/C)
   note: string // 친구 톤 멘트 (15-30자)
 }
+
+// D32 — Phase 5a SCENARIO 07-CHAT (채팅 default)
+// 친구 톤 대화 응답 — 사용자 history + tripContext + userStyle 인지.
+export interface LLMChatResponse {
+  response: string // 친구 톤 응답 (15-200자)
+}

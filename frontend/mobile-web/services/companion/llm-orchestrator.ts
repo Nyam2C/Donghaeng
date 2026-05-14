@@ -1,6 +1,7 @@
 import type {
   CityCandidate,
   KakaoPOI,
+  LLMChatResponse,
   LLMCityRecommendation,
   LLMRecommendation,
   LLMRoute,
@@ -8,6 +9,7 @@ import type {
   LLMRouteStop,
   LLMTripPoiList,
   TripPoiCandidate,
+  Turn,
   UserStyle,
 } from '@trip/types'
 
@@ -467,5 +469,100 @@ export async function* streamRoutes(
   }
 
   if (!finalRec) throw new Error('Routes LLM stream 끝났지만 final payload 없음')
+  yield { chunk: '', final: finalRec }
+}
+
+// ---------------------------------------------------------------------------
+// D32 — SCENARIO 07-CHAT 채팅 대화 (LLMChatResponse)
+// ---------------------------------------------------------------------------
+/**
+ * Phase 5a · 채팅 모드 default streamer.
+ *
+ * 입력 = user 의 결 + 대화 history (최근 50턴 cap, Lane B 단에서도 동일 cap) +
+ *       이번 사용자 발화 + 선택적 tripContext (city / startDate / endDate / planning_step).
+ * 출력 = 친구 톤 응답 한 문장 (LLMChatResponse.response, 15-200자, 시그니처는 zod schema 와 일치).
+ *
+ * Wire format (USE_MOCKS=false 시 server `/api/llm/chat` 응답):
+ *   SSE 표준 — `event: start → raw → final → done` (기존 POI/cities/routes 와 동일 패턴)
+ *   final.data = LLMChatResponse
+ *
+ * USE_MOCKS=true:
+ *   __mocks__/api/llm-chat.json 의 단일 LLMChatResponse 를 즉시 final 로 yield.
+ *
+ * 친구 톤 voice 인용은 design-preview SCENARIO 07-CHAT line 2422 의 인사 그대로.
+ *
+ * AsyncGenerator 시그니처 freeze (D12). body 만 구현.
+ */
+
+const CHAT_FALLBACK_FIXTURE: LLMChatResponse =
+  require('../__mocks__/api/llm-chat.json') as LLMChatResponse
+
+export interface ChatOrchestratorInput {
+  userStyle: UserStyle
+  history: Turn[]
+  userMessage: string
+  tripContext?: {
+    city?: string
+    startDate?: string
+    endDate?: string
+    planningStep?: 'dates' | 'pois' | 'routes' | 'on_trip'
+  }
+}
+
+/** SSE event.data 가 LLMChatResponse shape 인지 검증 (D2 정신). */
+function validateChatShape(raw: unknown): LLMChatResponse | null {
+  if (!raw || typeof raw !== 'object') return null
+  const f = raw as Partial<LLMChatResponse>
+  if (typeof f.response !== 'string' || f.response.length < 2) return null
+  return { response: f.response }
+}
+
+export async function* streamChat(
+  input: ChatOrchestratorInput,
+): AsyncGenerator<{ chunk: string; final?: LLMChatResponse }> {
+  // ── USE_MOCKS path: fixture 즉시 final 반환 ──
+  if (USE_MOCKS) {
+    yield { chunk: '', final: CHAT_FALLBACK_FIXTURE }
+    return
+  }
+
+  // ── Real fetch path: server `/api/llm/chat` SSE stream ──
+  const res = await fetch(`${apiBaseUrl}/api/llm/chat`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', accept: 'text/event-stream' },
+    body: JSON.stringify(input),
+  })
+  if (!res.ok) throw new Error(`Chat LLM HTTP ${res.status}`)
+  if (!res.body) throw new Error('Chat LLM 응답 body 없음')
+
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder('utf-8')
+  let buffer = ''
+  let finalRec: LLMChatResponse | null = null
+
+  while (true) {
+    const { value, done } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    const { events, rest } = parseSseChunks(buffer)
+    buffer = rest
+    for (const ev of events) {
+      if (ev.event === 'final') {
+        const validated = validateChatShape(ev.data)
+        if (validated) {
+          finalRec = validated
+        }
+      } else if (ev.event === 'raw' && ev.data && typeof ev.data === 'object') {
+        // 옵셔널: streaming chunk yield (token 단위). Lane B 가 raw event 로
+        // partial token 흘려보내면 caller 가 typing indicator 에 활용 가능.
+        const obj = ev.data as { chunk?: unknown }
+        if (typeof obj.chunk === 'string' && obj.chunk.length > 0) {
+          yield { chunk: obj.chunk }
+        }
+      }
+    }
+  }
+
+  if (!finalRec) throw new Error('Chat LLM stream 끝났지만 final payload 없음')
   yield { chunk: '', final: finalRec }
 }

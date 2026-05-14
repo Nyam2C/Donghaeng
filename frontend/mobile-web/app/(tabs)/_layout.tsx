@@ -11,9 +11,10 @@ import { stroke } from '@/theme/spacing'
  *  - 아이콘 = 4px tab-dot (currentColor) — preview line 216 의 .tab-dot
  *  - 라벨 10px Pretendard, gap 4px, height 64
  *  - active=celadon, inactive=textSoft
- *  - talk 진입 시 탭바 hide (DESIGN.md 라인 271 "TTS 에서만 탭바를 숨긴다")
+ *  - 모든 탭에서 탭바 visible (D32 — 대화 탭 default = 채팅, design-preview SCENARIO 07-CHAT line 2451-2455 의
+ *    `tab-bar` 그대로). 기존 D17 의 "TTS 에서만 탭바 숨김" 룰은 음성 모드 v2 후순위로 함께 미룸.
  *
- * D14 (3 탭) → D17 (4 탭) 갱신 사유: 사용자 요청 — design-preview 그대로 통일
+ * D14 (3 탭) → D17 (4 탭) → D32 (talk 탭바 visible) 갱신.
  */
 
 type TabDotProps = { color: string }
@@ -90,7 +91,7 @@ export default function TabsLayout() {
           title: '대화',
           tabBarIcon: (p) => <TabDot color={p.color} />,
           tabBarLabel: (p) => <TabLabel color={p.color}>대화</TabLabel>,
-          tabBarStyle: { display: 'none' },
+          // D32 — 채팅 default 이므로 탭바 visible (음성 모드 v2 에서만 hide 부활 예정)
         }}
       />
       <Tabs.Screen
