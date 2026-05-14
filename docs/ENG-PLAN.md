@@ -611,6 +611,35 @@ Phase 3 — 간단 일정 시작 (Day 7-8)
 - [ ] "시작" 탭 → 첫 LLM 멘트 streaming 확인 (recommended_ids 존재 검증)
 - [ ] PR 머지
 
+### Phase 3.5 — LLM 함수 패턴 정립 + eval baseline (Day 9, ~1일) · refactor
+
+```
+Phase 3.5 — Claude 위 OSS 에이전트 오케스트레이션 패턴 (D22)
+├─ 채울/신규 파일:
+│   • backend/server/llm/factory.ts — createLLMFunction<I, O> generic
+│   • backend/server/llm/invoke-claude.ts — internal: Bun.spawn(['claude', ...])
+│   • backend/server/llm/prompts.ts — BASE_PERSONA + CITY/POI fragment
+│   • backend/server/llm/schemas.ts — zod schemas (CityCandidate · LLMCityRecommendation · LLMRecommendation 등)
+│   • backend/server/llm/functions/recommend-cities.ts — Phase 3 의 cities handler 포팅
+│   • backend/server/llm/functions/recommend-pois.ts — Phase 3 의 POI handler 포팅
+│   • backend/server/src/routes/llm.ts — handler = createLLMFunction 호출만 (~50줄로 축소, ~85% 코드 감소)
+│   • shared/types/src/agent.ts — zod schema re-export (frontend 도 import OK)
+│   • docs/AGENTS.md — 사람 가독: 패턴 + 8 함수 카탈로그 (현재 2, Phase 4-5 6 추가) + 페르소나 fragment + AI 슬롭 A 등급 예시
+│   • backend/server/eval/promptfoo.yaml — eval suite config
+│   • backend/server/eval/recommend-cities.eval.ts — 10 케이스 (결 조합 → 친구 톤 금자)
+│   • backend/server/eval/recommend-pois.eval.ts — 10 케이스 (외항 트리거 → D2 정신)
+└─ 의존성: zod + zod-to-json-schema + promptfoo install
+```
+
+**Phase 3.5 완료 체크리스트:**
+- [ ] `bun run typecheck && bun run lint` green
+- [ ] docker compose: server healthy + 기존 API 회귀 0 (`/api/llm` + `/api/llm/cities` 동일 SSE 응답, frontend orchestrator 무변경)
+- [ ] design-guard + scaffold-guard CLEAN (refactor 만, freeze 위반 X)
+- [ ] **promptfoo eval green** — Claude baseline A 등급 lock (4 케이스 × 2 함수 = 8 통과)
+- [ ] PR 머지
+
+> **참고:** Claude 모델은 그대로 (D9-b reaffirm via D23). 변경 본질 = *호출 방식*. 추후 Phase 4-5 의 LLM 함수 4개는 같은 패턴 재사용.
+
 ### Phase 4 — 현장 컴패니언 (Day 9-14) · stub 채우기
 
 ```
@@ -1028,10 +1057,12 @@ GET  /health            → { "ok": true }
 | 2026-05-13 | **D19: Phase 3 = SCENARIO 01 (결 입력) 정렬 — ENG-PLAN line 598 명세 재해석** | 사용자 web 확인 시 *"design-preview Flow 1-4 짜는 단계랑 전혀 다름"* 지적. ENG-PLAN line 598 의 "3 input UI · 도시·날짜·결 태그" 가 design-preview SCENARIO 01 의도 (*도시 검색 X · 날짜 X · 결만 묻는다*) 와 충돌. design-preview line 1406 명제 "일정은 시간표가 아니라 친구가 쓴 편지" 와도 모순. `app/plan/new.tsx` 를 SCENARIO 01 패턴으로 정렬 — 결 태그 8개 (혼자가 좋아요·사진 많이·계획 느슨하게·맛집은 꼭·야경/야간·자연>도시·체력 좋아요·현지인처럼) + 자유 prompt + "이걸로 시작해요" CTA. 도시 검색·날짜 UI 제거. 한 사이드 이펙트: SCENARIO 02-04 흐름이 ENG-PLAN 에 정의 안 됨 → D20/D21 로 분리 처리 |
 | 2026-05-13 | **D20: app/plan/recommend.tsx scaffold-freeze 명시적 예외** | D19 가 도시 검색을 SCENARIO 01 에서 제거하자 "결 입력 후 다음 화면이 없는" *흐름 단절* 발생. 사용자가 "그 다음 과정 없어?" 지적. D12 (scaffold-freeze, 새 파일 X) 의 **명시적 1회 예외**로 `app/plan/recommend.tsx` 1개 생성 허용. SCENARIO 02 (도시 추천 4 카드) 의 phone-screen 패턴 (design-preview line 1598-1656) 을 RN 으로 구현. 다른 새 파일 추가 X — recommend.tsx 단 1개. 추후 SCENARIO 03/04 화면도 새 파일 필요 시 같은 패턴으로 D 결정 명시 |
 | 2026-05-13 | **D21: AI 도시 추천 통합 — `LLMCityRecommendation` + `/api/llm/cities` + D2 도시명 whitelist 검증** | SCENARIO 02 의 첫 cut 이 mock 4 도시 (강릉/통영/제주 남부/거제) hardcode → 사용자 *"AI 지역추천이 아니잖어"* 지적. 명제 "친구가 옆에서 같이 여행 짜주는" 위반. `shared/types/src/llm.ts` 에 `CityCandidate {name, reason, match}` + `LLMCityRecommendation {cities[4], note}` 추가 (기존 `LLMRecommendation` 무변경). `backend/server/src/routes/llm.ts` 에 `POST /api/llm/cities` handler 추가 (기존 `POST /` 무변경). **D2 정신 적용**: cities[].name 이 한국 실재 도시 whitelist (~110개: 광역시도 17 + 시군구 + 제주 권역) 안에 있는지 검증 + length === 4 검증, fail 시 mock fallback + `hallucinationDetected: true`. SSE wire format 은 POI 추천과 동일 (`event: start → raw → final → done`). `services/companion/llm-orchestrator.ts` 에 `streamCityRecommendation` 추가 (기존 함수 무변경). `app/plan/recommend.tsx` mount 시 `useUserStyle.tags` 기반 LLM 호출 + loading/error 친구 톤 voice. 실응답: 결[야경/야간,맛집은 꼭] → 부산/여수/전주/강릉 ("회 한 점 캬", "게장은 진리") · 친구 톤 A 등급. `hallucinationDetected:false` |
+| 2026-05-14 | **D22: Claude 위 OSS 에이전트 오케스트레이션 패턴 정립 (Phase 3.5)** | 사용자 비전: *LLM 호출 1번 → 필요에 의해 에이전트 호출 → 각 에이전트 = API 함수 형식 도구 → 출력 schema strict → 토큰 절약*. OSS = **에이전트 오케스트레이션 패턴** (Claude 모델은 그대로). plan-eng-review 4 결정 lock 후 Phase 3.5 신설 (Day 9, ~1일). `backend/server/llm/` 구조 도입: `factory.ts` (createLLMFunction<I, O> generic) · `invoke-claude.ts` (internal Bun.spawn) · `prompts.ts` (BASE_PERSONA + 함수별 fragment) · `schemas.ts` (zod) · `functions/{recommend-cities, recommend-pois}.ts`. `routes/llm.ts` 702 → 96줄 (~86% 코드 감소, DRY 강화). `routes/llm.ts` 의 `export type LLMResponse` dead-export 제거 (외부 caller 0, break 없음). `shared/types/src/agent.ts` 신규 (zod schema = 단일 source-of-truth, z.infer 로 TS type 도출). `docs/AGENTS.md` 신규 (사람 가독: 8 함수 카탈로그 + 페르소나 fragment + AI 슬롭 baseline). 의존성: `zod ^4` (4 곳 — root + backend/server + shared/types, Docker bun workspace hoist 호환), `zod-to-json-schema` 미추가 (zod 4 native `z.toJSONSchema()` 사용). promptfoo: install 시 monorepo + better-sqlite3 native build + parse5 subpath export 충돌으로 미설치, 자체 `bun eval/*.eval.ts` 스크립트로 대체 (assertion 동등, promptfoo.yaml 은 reference 보존). 친구 톤 A 등급 baseline lock: recommend-cities 10/10 pass + recommend-pois 10/10 pass (claude=true, fallback=none, hallucination=0). frontend `services/companion/llm-orchestrator.ts` 무변경 (0 byte, wrapper 가 동일 SSE format 유지) |
+| 2026-05-14 | **D23: D9-b reaffirm — Claude Code CLI 그대로 (모델 교체 X)** | D22 가 OSS 패턴 정립이지 *LLM 모델 마이그레이션 아님*. plan-eng-review 중 사용자 명확화: *"하나의 LLM 호출하고 여기서 필요에 의해 에이전트 호출 — 이게 다 Claude 모델인데 이건 OSS 가 왜 아닌거야?"*. → OSS = 에이전트 오케스트레이션 시스템 자체 (TypeScript + zod + factory pattern + Anthropic function calling 호환 spec + promptfoo eval). Claude 모델은 v1 데모 단계에서 essential. wrapper 추상화 (`invoke-claude.ts`) 가 *교체 가능성을 열어둠* — 추후 옵션이지 비전 아님. 시간/innovation token 절약 |
 
 ---
 
-**Status: APPROVED + Phase 3 확장 완료 (2026-05-13, D1-D21 반영) — Phase 3 (간단 일정 시작 · Day 7-8) + SCENARIO 02 확장 완료. SCENARIO 01 (결 입력) + SCENARIO 02 (AI 4 도시 추천) 두 화면 + Kakao Local + 실 Claude CLI 통합 + D2 hallucination guard 검증 (POI 와 도시 둘 다). 다음 Phase 4 (현장 컴패니언, Day 9-14) 대기. 잔여 ~3.4주.**
+**Status: APPROVED + Phase 3 확장 완료 (2026-05-14, D1-D23 반영) — Phase 3 (간단 일정 시작 · Day 7-8) + SCENARIO 02 확장 완료. plan-eng-review 4 결정 lock (D22 OSS 에이전트 패턴 + D23 Claude 그대로). 다음 Phase 3.5 (LLM 함수 패턴 + promptfoo eval, Day 9, ~1일) 진입. 잔여 ~3.5주 (Phase 3.5 +1일).**
 
 ---
 
@@ -1040,7 +1071,7 @@ GET  /health            → { "ok": true }
 | Review | Trigger | Why | Runs | Status | Findings |
 |--------|---------|-----|------|--------|----------|
 | CEO Review | `/plan-ceo-review` | Scope & strategy | 0 | — | (안 함, /office-hours로 대체) |
-| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 3 | **CLEAR (PLAN)** + Phase 1-3 완료 (확장 포함) | 3차 리뷰: 19 decisions (D1-D15 + D18-D21) 완료. Phase 1-3 (Day 1-8) + SCENARIO 02 확장 실행 끝, CI green, scaffold-freeze tag 유지 (D20 명시적 1회 예외만). phase-cycle 하네스 — Phase 2 Lane F 단일 + Phase 3 Lane F+B+T 병렬 + 사용자 manual loop 3회 (zustand · 디자인 · AI 통합) 통합. D2 hallucination guard 실 LLM 응답에서 POI 와 도시 둘 다 동작 확인. AI 슬롭 친구 톤 A 등급 |
+| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 4 | **CLEAR (PLAN)** + Phase 1-3 완료, Phase 3.5 lock | 4차 리뷰 (Phase 3.5 plan-eng-review): 21 decisions (D1-D15 + D18-D23) 완료. plan-eng-review 4 결정 lock — D1' (true strangler fig, innovation token 0) · D2' (createLLMFunction + 명시적 export) · D3' (backend/server/llm/ + zod + AGENTS.md) · D4' (Phase 3.5 신설 + promptfoo eval 포함). 사용자 명확화: OSS = 에이전트 오케스트레이션 패턴 (모델은 Claude 그대로). 0 critical gap, 0 unresolved |
 | Design Review | `/plan-design-review` | UI/UX gaps | 0 | — | 권장 (4 화면 코딩 시작 전) |
 | Codex Review | `/codex review` | Independent 2nd opinion | 0 | — | 권장 (코딩 후) |
 
@@ -1052,9 +1083,9 @@ GET  /health            → { "ok": true }
 
 **UNRESOLVED:** 2 (production hosting + production LLM provider — Phase 7 결정)
 
-**VERDICT:** ENG CLEARED (3rd, D9-D21) — Phase 1-3 + SCENARIO 02 확장 실측 완료. Lane F+B+T 병렬 spawn + 사용자 manual feedback 통합 (디자인 격차 정렬, AI 추천 통합). design-guard/scaffold-guard CLEAN (D20 명시적 1회 예외). 친구 톤 A 등급 실응답 확인 ("회 한 점 캬", "게장은 진리" 같은 자연스러운 어휘). **Phase 4 (현장 컴패니언 · 카드 뷰, Day 9-14)** 시작 가능.
+**VERDICT:** ENG CLEARED (4th, D9-D23) — Phase 1-3 + SCENARIO 02 확장 실측 완료 + Phase 3.5 plan lock. plan-eng-review 통해 OSS 비전 해석 명확화 (모델 ≠ 패턴). **Phase 3.5 (Day 9, ~1일)** 진입 가능 → Phase 4 (현장 컴패니언 · 카드 뷰, Day 10-15) 시작.
 
-**D9-D21 추가사항:**
+**D9-D23 추가사항:**
 - Tech Stack: **Turborepo** + bun workspaces + Docker Compose + Expo Web + **husky 9 + GitHub Actions** (D11 Day 2b 중 simple-git-hooks → husky 교체)
 - File Structure: **`frontend/mobile-web/` + `backend/{server, ai-tts}/` + `shared/types/` + `.github/workflows/` + `.claude/{agents,skills}/`** (frontend/backend 분류 + CI/CD + 하네스)
 - Architecture: docker-compose는 backend 전용 (server + ai-tts). frontend는 host metro
@@ -1069,3 +1100,4 @@ GET  /health            → { "ok": true }
 - **Phase 3 (간단 일정 시작) 완료** (2026-05-13): Lane F (intake UI + 결 태그 + poi/llm-orchestrator client) + Lane B (Kakao proxy + Claude CLI spawn SSE + D2 strict) + Lane T (readiness only, 코드 변경 0) 병렬 spawn. 6 stub body 채움 (`app/plan/new.tsx` · `components/tag-chip.tsx` · `services/poi.ts` · `services/companion/llm-orchestrator.ts` · `services/api-client.ts` (normalizePath 내부) · `services/__mocks__/api/llm.json` (fixture id 정합)) + 2 backend route (`routes/poi.ts` Kakao Local API 프록시 · `routes/llm.ts` Claude CLI spawn + SSE + D2 검증). 인프라: D18 (Dockerfile base alpine→debian) 로 claude CLI 컨테이너 가동. 통합 검증: Kakao `/api/poi/search?q=강남역` 실 15 POI 응답 + `/api/llm` SSE stream `event: start → raw → final → done` + `hallucinationDetected: false` + 친구 톤 멘트 ("조용한 분위기 찾는다면 한옥 찻집이 딱이야..."). guards CLEAN (design-guard CRITICAL 0 · scaffold-guard freeze 위반 0, TagChip `onPress?` 옵셔널 추가만 LOW). 회고: `TagChipProps.onPress?` 옵셔널 추가 (D12 freeze 위반 X, caller 0 영향) + `api-client.normalizePath` 의 `/api/` prefix strip 내부 룰 (export 시그니처 무변경). manual UX 잔여: 디바이스에서 3 input 흐름 + 첫 LLM 멘트 음성 인용 패턴 확인 필요
 - **Lane T readiness 보고** (Phase 5a 대비): edge-tts 6.1.18 + ko-KR-SunHiNeural 가용 확인 (컨테이너 내 검증) + ai-tts 컨테이너 healthy + 추가 의존성 0. 사용자 트래킹 필요: Naver Clova Voice 앱 승인 (1-3일 대기) — Phase 7 교체 대비, **Day 10 이전 신청 권장** (ENG-PLAN line 937)
 - **Phase 3 확장 완료** (2026-05-13, D19-D21 추가): SCENARIO 01 (결 입력) + SCENARIO 02 (AI 4 도시 추천). 사용자 manual loop 3회 — (1) zustand 5 web bundle SyntaxError `import.meta` → `metro.config.js` 의 `unstable_enablePackageExports` + `conditionNames: ['require','react-native','browser']` 으로 CJS 빌드 선택 fix · (2) design-preview 격차 → D19 SCENARIO 01 정렬 (도시 검색·날짜 제거, 결 태그 8개) · (3) SCENARIO 02 흐름 단절 → D20 (`app/plan/recommend.tsx` scaffold-freeze 명시적 1회 예외) + D21 (AI 도시 추천 통합, `LLMCityRecommendation` + `/api/llm/cities` + 도시 whitelist D2 검증). 인프라 동시 정렬: SSE wire format 의 named event ('start'/'raw'/'final'/'done') 인식하도록 `parseSseChunks` patch + Hono `cors()` 미들웨어 추가 (web → 3000 호출 차단 해결) + 한지 배경 (#F5EFE3) → 흰색 (#FFFFFF, `bgElev`) 정렬 (home.tsx 일관, design-preview phone-screen 룰). 실 통합 검증: 결 [야경/야간, 맛집은 꼭] → 부산/여수/전주/강릉, `hallucinationDetected:false`. **친구 톤 AI 슬롭 A 등급** ("회 한 점 캬", "게장은 진리" 같은 자연스러운 어휘). 다음 phase 진입 전 manual UX 잔여: 디바이스에서 결 조합 별 도시 추천 다양성 검증 + prompt 자유 입력 LLM 재호출 흐름 (Phase 4+)
+- **Phase 3.5 plan-eng-review 결과** (2026-05-14, D22-D23 추가): plan-eng-review 4 결정 lock — (D1') true strangler fig (innovation token 0, 일정 영향 +1일만) · (D2') createLLMFunction + 명시적 export 패턴 · (D3') backend/server/llm/ 구조 + zod + docs/AGENTS.md 신규 · (D4') Phase 3.5 신설 + promptfoo eval 포함 (Day 9). 사용자 핵심 명확화: **OSS = 에이전트 오케스트레이션 패턴** (TypeScript + zod + factory + Anthropic function calling 호환 spec + promptfoo eval). 모델은 Claude 그대로 (D9-b reaffirm via D23) — *비전 ≠ 모델 교체, 비전 = 도구화 패턴*. **D24 (OSS LLM 마이그레이션 v1.1) 폐기** — 사용자 비전 아니었음. wrapper 추상화는 *교체 옵션* 으로 유지하되 요구사항 아님. Build Steps: backend/server/llm/{factory,invoke-claude,prompts,schemas}.ts + functions/{recommend-cities,recommend-pois}.ts + shared/types/src/agent.ts + docs/AGENTS.md + eval/{promptfoo.yaml, recommend-cities.eval.ts, recommend-pois.eval.ts}. 기존 routes/llm.ts 702줄 → ~50줄 (~85% 감소, DRY). frontend orchestrator 무변경 (SSE format 유지). 친구 톤 baseline 회귀 안전망 = promptfoo eval. 브랜치: `feat/llm-fn-pattern`

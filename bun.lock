@@ -4,6 +4,9 @@
   "workspaces": {
     "": {
       "name": "donghaeng",
+      "dependencies": {
+        "zod": "^4.4.3",
+      },
       "devDependencies": {
         "@biomejs/biome": "^1.9.4",
         "husky": "^9.1.7",
@@ -23,6 +26,7 @@
       "dependencies": {
         "@trip/types": "workspace:*",
         "hono": "^4.6.13",
+        "zod": "^4.4.3",
       },
       "devDependencies": {
         "@types/bun": "^1.1.14",
@@ -76,6 +80,9 @@
     "shared/types": {
       "name": "@trip/types",
       "version": "0.0.0",
+      "dependencies": {
+        "zod": "^4.4.3",
+      },
     },
   },
   "packages": {
@@ -1584,6 +1591,8 @@
     "yargs-parser": ["yargs-parser@21.1.1", "", {}, "sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw=="],
 
     "yocto-queue": ["yocto-queue@0.1.0", "", {}, "sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q=="],
+
+    "zod": ["zod@4.4.3", "", {}, "sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ=="],
 
     "zustand": ["zustand@5.0.13", "", { "peerDependencies": { "@types/react": ">=18.0.0", "immer": ">=9.0.6", "react": ">=18.0.0", "use-sync-external-store": ">=1.2.0" }, "optionalPeers": ["@types/react", "immer", "react", "use-sync-external-store"] }, "sha512-efI2tVaVQPqtOh114loML/Z80Y4NP3yc+Ff0fYiZJPauNeWZeIp/bRFD7I9bfmCOYBh/PHxlglQ9+wvlwnPikQ=="],
 
