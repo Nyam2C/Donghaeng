@@ -1,0 +1,18 @@
+{
+  "route": {
+    "letter": "A",
+    "name": "바다 따라",
+    "reason": "해안선 따라 천천히, 멀리 보면서",
+    "stops": [
+      { "poi_id": "mock-001", "order": 1 },
+      { "poi_id": "mock-002", "order": 2 },
+      { "poi_id": "jeongdongjin", "order": 3 },
+      { "poi_id": "mock-004", "order": 4 }
+    ],
+    "travelMin": 270,
+    "moodStars": 3,
+    "moodLabel": "조용함"
+  },
+  "addedStopName": "정동진",
+  "note": "정동진 좋죠. 오후 시간 비어있어서 넣을 수 있어요."
+}

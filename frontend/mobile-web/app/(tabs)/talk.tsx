@@ -11,11 +11,12 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useShallow } from 'zustand/react/shallow'
 
-import type { LLMChatResponse, Turn } from '@trip/types'
+import type { LLMChatResponse, LLMRoute, LLMRouteUpdate, Turn } from '@trip/types'
 
 import { MicIcon } from '@/components/icons/mic'
 import { InkMark } from '@/components/ink-mark'
-import { streamChat } from '@/services/companion/llm-orchestrator'
+import { RouteUpdateCard } from '@/components/route-update-card'
+import { streamChat, streamIntent, streamRouteUpdate } from '@/services/companion/llm-orchestrator'
 import { useSession } from '@/stores/session'
 import { useTrip } from '@/stores/trip'
 import { useUserStyle } from '@/stores/user-style'
@@ -102,6 +103,11 @@ export default function Talk() {
     ),
   )
 
+  // D34 — 현재 ON-TRIP 동선 (인라인 동선 변경 카드의 base). 없으면 SCENARIO 08 의
+  // intent 분기는 노옵 (LLMRouteUpdate base 가 없으면 streamRouteUpdate 불가).
+  const activeRoute = useTrip((s) => s.activeRoute)
+  const setActiveRoute = useTrip((s) => s.setActiveRoute)
+
   // user style — chat input 의 userStyle 인자 (LLM 친구 톤 결 인지)
   const userStyle = useUserStyle(
     useShallow((s) => ({
@@ -114,7 +120,10 @@ export default function Talk() {
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const scrollRef = useRef<ScrollView>(null)
+  const inputRef = useRef<TextInput>(null)
   const introFiredRef = useRef(false)
+  // D34 — "이대로" 로 확정된 routeUpdate turn 의 ts set. 카드 disabled 표시용.
+  const [confirmedUpdateTs, setConfirmedUpdateTs] = useState<Set<number>>(() => new Set())
 
   // 자동 scroll-to-bottom: turns 늘어날 때마다 끝으로 (60ms 지연으로 layout 후)
   // biome-ignore lint/correctness/useExhaustiveDependencies: turns.length 변화 감지가 의도. body 안에서 turns 직접 참조 X
@@ -125,10 +134,47 @@ export default function Talk() {
     return () => clearTimeout(id)
   }, [turns.length])
 
-  /** chat 호출 공통 — history + userMessage 입력, final 응답을 companion turn 으로 append. */
+  /**
+   * chat 호출 공통.
+   *
+   * D34 intent 분기:
+   *  1. streamIntent 로 사용자 발화의 intent 추출 (실패 시 'continue' fallback).
+   *  2. intent === 'add_poi' AND activeRoute 존재 시:
+   *     → streamChat (약속 톤 응답) + streamRouteUpdate (동선 재계산) 병렬 실행.
+   *     → companion turn 두 개 append: (a) 약속 톤 text, (b) routeUpdate 카드 turn, (c) 확인 멘트.
+   *  3. 그 외 (continue / show_map / etc. 또는 activeRoute 없음):
+   *     → 기존 streamChat 단일 흐름.
+   */
   const callChat = useCallback(
     async (userMessage: string, historySnapshot: Turn[]) => {
-      let final: LLMChatResponse | undefined
+      // D34 — intent 먼저 추출 (실패 시 'continue' 로 폴백 — 기존 chat 흐름 유지)
+      let intentName = 'continue'
+      try {
+        for await (const ev of streamIntent({
+          userMessage,
+          tripContext: activeTrip
+            ? {
+                city: activeTrip.city,
+                startDate: activeTrip.startDate,
+                endDate: activeTrip.endDate,
+                planningStep: activeTrip.planningStep,
+              }
+            : undefined,
+        })) {
+          if (ev.final) {
+            intentName = ev.final.intent
+            break
+          }
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('[talk] streamIntent 실패 — continue fallback:', err)
+      }
+
+      const shouldUpdateRoute = intentName === 'add_poi' && activeRoute && activeTrip?.city
+
+      // ── 약속 톤 응답 (streamChat) ──
+      let chatFinal: LLMChatResponse | undefined
       try {
         for await (const ev of streamChat({
           userStyle: {
@@ -148,7 +194,7 @@ export default function Talk() {
             : undefined,
         })) {
           if (ev.final) {
-            final = ev.final
+            chatFinal = ev.final
             break
           }
         }
@@ -157,11 +203,86 @@ export default function Talk() {
         console.warn('[talk] streamChat 실패:', err)
       }
 
-      const responseText = final?.response ?? SEND_FAIL_FALLBACK
+      const responseText = chatFinal?.response ?? SEND_FAIL_FALLBACK
       appendTurn({ ts: Date.now(), speaker: 'companion', text: responseText })
+
+      if (!shouldUpdateRoute) return
+
+      // ── 동선 재계산 (streamRouteUpdate) ──
+      // activeRoute / activeTrip.city 는 위에서 truthy 보장됨 — TS narrow 위해 ref 재캐치
+      const baseRoute: LLMRoute = activeRoute
+      const city: string = activeTrip.city
+
+      let updateFinal: LLMRouteUpdate | undefined
+      try {
+        for await (const ev of streamRouteUpdate({
+          currentRoute: baseRoute,
+          addRequest: userMessage,
+          city,
+          userStyle: {
+            tags: userStyle.tags,
+            likedPoiIds: userStyle.likedPoiIds,
+            dislikedPoiIds: userStyle.dislikedPoiIds,
+          },
+        })) {
+          if (ev.final) {
+            updateFinal = ev.final
+            break
+          }
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('[talk] streamRouteUpdate 실패:', err)
+      }
+
+      if (!updateFinal) return
+
+      // 인라인 동선 카드 turn append — speaker 'companion' + routeUpdate 옵셔널 필드.
+      appendTurn({
+        ts: Date.now(),
+        speaker: 'companion',
+        text: '', // routeUpdate 가 있으면 RouteUpdateCard 가 렌더 — text 는 사용 안 됨
+        routeUpdate: updateFinal,
+      })
+      // 카드 뒤에 "이렇게 가도 괜찮아요?" 확인 멘트 (design-preview line 2516)
+      appendTurn({
+        ts: Date.now() + 1, // 카드 turn 과 ts 충돌 회피 + 정렬 안정
+        speaker: 'companion',
+        text: '이렇게 가도 괜찮아요?',
+      })
     },
-    [activeTrip, appendTurn, userStyle.tags, userStyle.likedPoiIds, userStyle.dislikedPoiIds],
+    [
+      activeTrip,
+      activeRoute,
+      appendTurn,
+      userStyle.tags,
+      userStyle.likedPoiIds,
+      userStyle.dislikedPoiIds,
+    ],
   )
+
+  // D34 — "이대로" 확정 핸들러. routeUpdate.route 를 activeRoute 로 박고 동행 응답 append.
+  const handleConfirmRouteUpdate = useCallback(
+    (turnTs: number, routeUpdate: LLMRouteUpdate) => {
+      setActiveRoute(routeUpdate.route)
+      setConfirmedUpdateTs((prev) => {
+        const next = new Set(prev)
+        next.add(turnTs)
+        return next
+      })
+      appendTurn({
+        ts: Date.now(),
+        speaker: 'companion',
+        text: '응, 이대로 가요.',
+      })
+    },
+    [appendTurn, setActiveRoute],
+  )
+
+  // D34 — "다른 곳도" — 입력창 focus 만 (사용자 추가 발화 유도, 카드는 그대로 둠)
+  const handleAskMoreRouteUpdate = useCallback(() => {
+    inputRef.current?.focus()
+  }, [])
 
   // 첫 진입 자동 인사 — turns 비어있고 한 번도 안 쐈으면 streamChat 의 첫 응답을 갈음
   // (mock fixture 의 첫 인사가 design-preview line 2422 직역).
@@ -334,6 +455,27 @@ export default function Talk() {
             </View>
           ) : (
             turns.map((turn, idx) => {
+              // D34 — routeUpdate turn 이면 인라인 동선 변경 카드 렌더 (text 무시)
+              if (turn.routeUpdate) {
+                const ru = turn.routeUpdate
+                // base 동선 비교 = 확정 전 activeRoute (없으면 새 동선 자체 대비 0).
+                // 카드가 표시되는 시점의 activeRoute 가 base — 사용자 "이대로" 누르기 전엔
+                // activeRoute 가 그대로. confirmedUpdateTs 에 들어있으면 disabled 표시.
+                const oldStops = activeRoute?.stops.length ?? ru.route.stops.length
+                const oldMin = activeRoute?.travelMin ?? ru.route.travelMin
+                return (
+                  <RouteUpdateCard
+                    key={`${turn.ts}-${idx}`}
+                    routeUpdate={ru}
+                    oldStopsCount={oldStops}
+                    oldTravelMin={oldMin}
+                    confirmed={confirmedUpdateTs.has(turn.ts)}
+                    onConfirm={() => handleConfirmRouteUpdate(turn.ts, ru)}
+                    onAskMore={handleAskMoreRouteUpdate}
+                  />
+                )
+              }
+
               const isUser = turn.speaker === 'user'
               const labelColor = isUser ? lightColors.textSoft : lightColors.celadon
               const labelName = isUser ? '윤서' : '동행'
@@ -429,6 +571,7 @@ export default function Talk() {
           }}
         >
           <TextInput
+            ref={inputRef}
             value={input}
             onChangeText={setInput}
             onSubmitEditing={handleSend}

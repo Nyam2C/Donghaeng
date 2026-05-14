@@ -161,3 +161,52 @@ export const ChatConversationInputSchema = z.object({
 
 export type ChatConversationInput = z.infer<typeof ChatConversationInputSchema>
 export type ChatTripContext = z.infer<typeof ChatTripContextSchema>
+
+// ---------------------------------------------------------------------------
+// Intent extraction (POST /api/llm/intent) — D34 SCENARIO 08
+// 사용자 채팅 발화에서 action intent 분류 (D4 voice intent 와 별개).
+// llm.ts: ChatIntent / LLMIntentExtraction
+// ---------------------------------------------------------------------------
+
+export const ChatIntentSchema = z.enum([
+  'add_poi',
+  'remove_poi',
+  'change_day',
+  'continue',
+  'show_map',
+])
+
+export const LLMIntentExtractionSchema = z.object({
+  intent: ChatIntentSchema,
+  poiName: z.string().optional(),
+  removeName: z.string().optional(),
+  targetDay: z.number().int().min(1).max(10).optional(),
+})
+
+export const IntentExtractionInputSchema = z.object({
+  userMessage: z.string().min(1).max(500),
+  tripContext: ChatTripContextSchema.optional(),
+})
+
+export type IntentExtractionInput = z.infer<typeof IntentExtractionInputSchema>
+
+// ---------------------------------------------------------------------------
+// Route update (POST /api/llm/route-update) — D34 SCENARIO 08
+// 현재 동선에 사용자 요청 stop 추가 → 동선 재계산.
+// llm.ts: LLMRouteUpdate
+// ---------------------------------------------------------------------------
+
+export const LLMRouteUpdateSchema = z.object({
+  route: LLMRouteSchema,
+  addedStopName: z.string().optional(),
+  note: z.string().min(8).max(50),
+})
+
+export const UpdateRouteInputSchema = z.object({
+  currentRoute: LLMRouteSchema,
+  addRequest: z.string().min(1).max(200), // 사용자 발화 ("정동진도 가고 싶어")
+  city: z.string().min(1),
+  userStyle: UserStyleSchema,
+})
+
+export type UpdateRouteInput = z.infer<typeof UpdateRouteInputSchema>
