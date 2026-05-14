@@ -6,10 +6,12 @@
 import { Hono } from 'hono'
 import { streamSSE } from 'hono/streaming'
 import { chatConversation } from '../../llm/functions/chat-conversation'
+import { intentExtract } from '../../llm/functions/intent-extract'
 import { recommendCities } from '../../llm/functions/recommend-cities'
 import { recommendPois } from '../../llm/functions/recommend-pois'
 import { recommendRoutes } from '../../llm/functions/recommend-routes'
 import { recommendTripPois } from '../../llm/functions/recommend-trip-pois'
+import { updateRoute } from '../../llm/functions/update-route'
 
 const llmRoutes = new Hono()
 
@@ -243,6 +245,88 @@ llmRoutes.post('/chat', async (c) => {
     } catch (err) {
       console.warn('[llm/chat] chatConversation threw', err)
       const fallback = { response: '음, 잠깐만요. 다시 한번 말해줄래요?' }
+      await stream.writeSSE({ event: 'final', data: JSON.stringify(fallback) })
+      await stream.writeSSE({
+        event: 'done',
+        data: JSON.stringify({ hallucinationDetected: false }),
+      })
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// POST /api/llm/intent — D34 SCENARIO 08 채팅 발화 → action intent 분류
+// ---------------------------------------------------------------------------
+llmRoutes.post('/intent', async (c) => {
+  let raw: unknown
+  try {
+    raw = await c.req.json()
+  } catch {
+    return c.json({ error: 'invalid JSON body' }, 400)
+  }
+
+  return streamSSE(c, async (stream) => {
+    await stream.writeSSE({ event: 'start', data: JSON.stringify({ phase: 'intent' }) })
+
+    try {
+      const { result, hallucinationDetected, trace } = await intentExtract(
+        raw as Parameters<typeof intentExtract>[0],
+      )
+      await stream.writeSSE({ event: 'raw', data: JSON.stringify({ trace }) })
+      await stream.writeSSE({ event: 'final', data: JSON.stringify(result) })
+      await stream.writeSSE({ event: 'done', data: JSON.stringify({ hallucinationDetected }) })
+    } catch (err) {
+      console.warn('[llm/intent] intentExtract threw', err)
+      const fallback = { intent: 'continue' as const }
+      await stream.writeSSE({ event: 'final', data: JSON.stringify(fallback) })
+      await stream.writeSSE({
+        event: 'done',
+        data: JSON.stringify({ hallucinationDetected: false }),
+      })
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// POST /api/llm/route-update — D34 SCENARIO 08 동선에 stop 추가 → 재계산
+// ---------------------------------------------------------------------------
+llmRoutes.post('/route-update', async (c) => {
+  let raw: unknown
+  try {
+    raw = await c.req.json()
+  } catch {
+    return c.json({ error: 'invalid JSON body' }, 400)
+  }
+
+  return streamSSE(c, async (stream) => {
+    const currentStops =
+      raw &&
+      typeof raw === 'object' &&
+      raw !== null &&
+      'currentRoute' in raw &&
+      typeof (raw as { currentRoute?: unknown }).currentRoute === 'object' &&
+      (raw as { currentRoute?: { stops?: unknown } }).currentRoute !== null &&
+      Array.isArray((raw as { currentRoute: { stops?: unknown } }).currentRoute.stops)
+        ? (raw as { currentRoute: { stops: unknown[] } }).currentRoute.stops.length
+        : 0
+    await stream.writeSSE({
+      event: 'start',
+      data: JSON.stringify({ phase: 'route-update', currentStops }),
+    })
+
+    try {
+      const { result, hallucinationDetected, trace } = await updateRoute(
+        raw as Parameters<typeof updateRoute>[0],
+      )
+      await stream.writeSSE({ event: 'raw', data: JSON.stringify({ trace }) })
+      await stream.writeSSE({ event: 'final', data: JSON.stringify(result) })
+      await stream.writeSSE({ event: 'done', data: JSON.stringify({ hallucinationDetected }) })
+    } catch (err) {
+      console.warn('[llm/route-update] updateRoute threw', err)
+      const fallback = {
+        route: null,
+        note: '음, 잠깐만요. 동선을 다시 살피고 있어요.',
+      }
       await stream.writeSSE({ event: 'final', data: JSON.stringify(fallback) })
       await stream.writeSSE({
         event: 'done',

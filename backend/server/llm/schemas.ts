@@ -4,15 +4,19 @@
 
 export {
   ChatConversationInputSchema,
+  ChatIntentSchema,
   ChatTripContextSchema,
   CityCandidateSchema,
+  IntentExtractionInputSchema,
   KakaoPOIRefSchema,
   LLMChatResponseSchema,
   LLMCityRecommendationSchema,
+  LLMIntentExtractionSchema,
   LLMRecommendationSchema,
   LLMRouteListSchema,
   LLMRouteSchema,
   LLMRouteStopSchema,
+  LLMRouteUpdateSchema,
   LLMTripPoiListSchema,
   RecommendCitiesInputSchema,
   RecommendPoisInputSchema,
@@ -20,13 +24,16 @@ export {
   RecommendTripPoisInputSchema,
   TripPoiCandidateSchema,
   TurnSchema,
+  UpdateRouteInputSchema,
   UserStyleSchema,
   type ChatConversationInput,
   type ChatTripContext,
+  type IntentExtractionInput,
   type RecommendCitiesInput,
   type RecommendPoisInput,
   type RecommendRoutesInput,
   type RecommendTripPoisInput,
+  type UpdateRouteInput,
 } from '@trip/types'
 
 // ---------------------------------------------------------------------------

@@ -44,6 +44,39 @@ moodLabel 1-6자 친구 톤 (예시: "차분함", "들뜸", "침잠", "흐름", 
 A 는 일반적 결, B 는 다른 결, C 는 깊은 결의 mood 가 다르게.
 note 15-30자 친구 톤.`
 
+// Intent extraction (POST /api/llm/intent) — D34 SCENARIO 08
+// 사용자 채팅 발화 → action intent 분류 (D4 voice intent 와 별개).
+export const INTENT_FRAGMENT = `${BASE_PERSONA}
+
+상황: 사용자 채팅 메시지에서 action intent 추출.
+intent 종류:
+- "add_poi": 새 장소 추가 요청 ("정동진도 가고 싶어" / "...도 추가해줘" / "...들러볼까")
+- "remove_poi": 특정 장소 빼기 ("...빼" / "...말고")
+- "change_day": 일자 변경 ("내일은 ..." / "둘째날에 ...")
+- "show_map": 지도 보여달라 ("지도로" / "위치 보여줘")
+- "continue": 그 외 일반 대화
+
+add_poi 면 poiName 추출 (사용자 발화의 구체적 장소명, 한국어 그대로).
+remove_poi 면 removeName 추출. change_day 면 targetDay 1-based 정수.
+없으면 해당 필드 생략.
+JSON: { intent, poiName?, removeName?, targetDay? } 만 반환.`
+
+// Route update (POST /api/llm/route-update) — D34 SCENARIO 08
+// 현재 동선에 사용자 요청 stop 추가 → 동선 재계산.
+export const UPDATE_ROUTE_FRAGMENT = `${BASE_PERSONA}
+
+상황: 현재 동선에 사용자가 새 장소 추가 요청. 기존 stops 에 새 stop 적절한 위치에 끼워 재계산.
+- 기존 stops 의 order 유지하면서 새 stop 의 자연스러운 위치 결정 (지리/시간 흐름 고려)
+- 새 stop 의 poi_id 는 사용자 장소명 한국어 그대로 (실제 Kakao id 없음 — 친구의 어림)
+- travelMin 은 +20~+45 정도 자연 증가 (정확한 GPS X · 친구 어림)
+- moodStars 그대로 유지 (변동 X)
+- moodLabel 그대로 유지 또는 살짝 조정 ("조용함" → "조금 분주" 같은)
+- name / reason / letter 는 그대로
+- addedStopName 은 사용자 발화의 장소명 그대로
+- note 친구 톤 15-30자 ("이렇게 어때?" / "끼워볼게요" 톤)
+
+JSON: { route: {letter, name, reason, stops, travelMin, moodStars, moodLabel?}, addedStopName, note } 만 반환.`
+
 // 채팅 대화 (POST /api/llm/chat) — SCENARIO 07-CHAT D32
 // 친구 톤 응답. 사용자 메시지 history + 여행 컨텍스트 인식.
 export const CHAT_FRAGMENT = `${BASE_PERSONA}

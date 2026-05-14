@@ -65,3 +65,24 @@ export interface LLMRouteList {
 export interface LLMChatResponse {
   response: string // 친구 톤 응답 (15-200자)
 }
+
+// D34 — Phase 5b SCENARIO 08 (대화로 동선 변경)
+// 사용자 발화 ("정동진도 가고 싶어") → intent 'add_poi' 감지 → 동선 재계산.
+export type ChatIntent = 'add_poi' | 'remove_poi' | 'change_day' | 'continue' | 'show_map'
+
+export interface LLMIntentExtraction {
+  intent: ChatIntent
+  // intent === 'add_poi' 시: 추가하려는 POI 이름 (사용자 발화에서 추출)
+  poiName?: string
+  // intent === 'remove_poi' 시: 제거 대상 POI 이름
+  removeName?: string
+  // intent === 'change_day' 시: 변경 대상 day (1-based)
+  targetDay?: number
+}
+
+// 동선 update 결과 — 변경된 새 LLMRoute + 친구 톤 약속 멘트
+export interface LLMRouteUpdate {
+  route: LLMRoute // 갱신된 동선 (기존 stops + 새 stop 추가)
+  addedStopName?: string // 추가된 stop 의 이름 (사용자에게 표시)
+  note: string // 친구 톤 멘트 (15-30자)
+}

@@ -1,12 +1,15 @@
 import type {
+  ChatIntent,
   CityCandidate,
   KakaoPOI,
   LLMChatResponse,
   LLMCityRecommendation,
+  LLMIntentExtraction,
   LLMRecommendation,
   LLMRoute,
   LLMRouteList,
   LLMRouteStop,
+  LLMRouteUpdate,
   LLMTripPoiList,
   TripPoiCandidate,
   Turn,
@@ -564,5 +567,172 @@ export async function* streamChat(
   }
 
   if (!finalRec) throw new Error('Chat LLM stream 끝났지만 final payload 없음')
+  yield { chunk: '', final: finalRec }
+}
+
+// ---------------------------------------------------------------------------
+// D34 — SCENARIO 08 대화로 동선 변경 (Intent + RouteUpdate)
+// ---------------------------------------------------------------------------
+/**
+ * Phase 5b · 채팅 안에서 사용자 발화 → intent 분기 → 동선 재계산.
+ *
+ * 두 단계로 흐름이 나뉜다:
+ *  1. streamIntent — 사용자 발화 → ChatIntent ('add_poi' | 'remove_poi' | ...)
+ *  2. intent === 'add_poi' (등 동선 변경) → streamRouteUpdate 로 갱신 LLMRoute
+ *
+ * Wire format (USE_MOCKS=false 시):
+ *   - POST /api/llm/intent       → SSE final.data = LLMIntentExtraction
+ *   - POST /api/llm/route-update → SSE final.data = LLMRouteUpdate
+ *
+ * USE_MOCKS=true 또는 Lane B 미완성 (404/5xx) 시:
+ *   fixture (__mocks__/api/llm-intent.json · llm-route-update.json) 즉시 final 반환.
+ *
+ * 친구 톤 voice 인용은 design-preview SCENARIO 08 line 2489-2516 그대로.
+ */
+
+const INTENT_FALLBACK_FIXTURE: LLMIntentExtraction =
+  require('../__mocks__/api/llm-intent.json') as LLMIntentExtraction
+
+const ROUTE_UPDATE_FALLBACK_FIXTURE: LLMRouteUpdate =
+  require('../__mocks__/api/llm-route-update.json') as LLMRouteUpdate
+
+export interface IntentOrchestratorInput {
+  userMessage: string
+  tripContext?: {
+    city?: string
+    startDate?: string
+    endDate?: string
+    planningStep?: 'dates' | 'pois' | 'routes' | 'on_trip'
+  }
+}
+
+/** SSE event.data 가 LLMIntentExtraction shape 인지 검증 (D2 정신). */
+function validateIntentShape(raw: unknown): LLMIntentExtraction | null {
+  if (!raw || typeof raw !== 'object') return null
+  const f = raw as Partial<LLMIntentExtraction>
+  if (typeof f.intent !== 'string') return null
+  const allowed: ChatIntent[] = ['add_poi', 'remove_poi', 'change_day', 'continue', 'show_map']
+  if (!allowed.includes(f.intent as ChatIntent)) return null
+  const result: LLMIntentExtraction = { intent: f.intent as ChatIntent }
+  if (typeof f.poiName === 'string') result.poiName = f.poiName
+  if (typeof f.removeName === 'string') result.removeName = f.removeName
+  if (typeof f.targetDay === 'number') result.targetDay = f.targetDay
+  return result
+}
+
+export async function* streamIntent(
+  input: IntentOrchestratorInput,
+): AsyncGenerator<{ chunk: string; final?: LLMIntentExtraction }> {
+  // ── USE_MOCKS path: fixture 즉시 final 반환 ──
+  if (USE_MOCKS) {
+    yield { chunk: '', final: INTENT_FALLBACK_FIXTURE }
+    return
+  }
+
+  // ── Real fetch path: server `/api/llm/intent` SSE stream ──
+  const res = await fetch(`${apiBaseUrl}/api/llm/intent`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', accept: 'text/event-stream' },
+    body: JSON.stringify(input),
+  })
+  if (!res.ok) throw new Error(`Intent LLM HTTP ${res.status}`)
+  if (!res.body) throw new Error('Intent LLM 응답 body 없음')
+
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder('utf-8')
+  let buffer = ''
+  let finalRec: LLMIntentExtraction | null = null
+
+  while (true) {
+    const { value, done } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    const { events, rest } = parseSseChunks(buffer)
+    buffer = rest
+    for (const ev of events) {
+      if (ev.event === 'final') {
+        const validated = validateIntentShape(ev.data)
+        if (validated) {
+          finalRec = validated
+        }
+      }
+    }
+  }
+
+  if (!finalRec) throw new Error('Intent LLM stream 끝났지만 final payload 없음')
+  yield { chunk: '', final: finalRec }
+}
+
+export interface RouteUpdateOrchestratorInput {
+  currentRoute: LLMRoute
+  addRequest: string // 사용자 발화 또는 추출된 POI 이름 ("정동진")
+  city: string
+  userStyle: UserStyle
+}
+
+/** SSE event.data 가 LLMRouteUpdate shape 인지 검증 (D2 정신). */
+function validateRouteUpdateShape(raw: unknown): LLMRouteUpdate | null {
+  if (!raw || typeof raw !== 'object') return null
+  const f = raw as Partial<LLMRouteUpdate>
+  if (typeof f.note !== 'string') return null
+  if (!f.route || typeof f.route !== 'object') return null
+  const r = f.route as Partial<LLMRoute>
+  const lettersOk = new Set(['A', 'B', 'C'])
+  if (typeof r.letter !== 'string' || !lettersOk.has(r.letter)) return null
+  if (typeof r.name !== 'string' || typeof r.reason !== 'string') return null
+  if (typeof r.travelMin !== 'number' || typeof r.moodStars !== 'number') return null
+  if (!Array.isArray(r.stops)) return null
+  const stopsOk = r.stops.every(
+    (s): s is LLMRouteStop =>
+      !!s &&
+      typeof (s as LLMRouteStop).poi_id === 'string' &&
+      typeof (s as LLMRouteStop).order === 'number',
+  )
+  if (!stopsOk) return null
+  const result: LLMRouteUpdate = { route: f.route as LLMRoute, note: f.note }
+  if (typeof f.addedStopName === 'string') result.addedStopName = f.addedStopName
+  return result
+}
+
+export async function* streamRouteUpdate(
+  input: RouteUpdateOrchestratorInput,
+): AsyncGenerator<{ chunk: string; final?: LLMRouteUpdate }> {
+  // ── USE_MOCKS path: fixture 즉시 final 반환 ──
+  if (USE_MOCKS) {
+    yield { chunk: '', final: ROUTE_UPDATE_FALLBACK_FIXTURE }
+    return
+  }
+
+  // ── Real fetch path: server `/api/llm/route-update` SSE stream ──
+  const res = await fetch(`${apiBaseUrl}/api/llm/route-update`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', accept: 'text/event-stream' },
+    body: JSON.stringify(input),
+  })
+  if (!res.ok) throw new Error(`RouteUpdate LLM HTTP ${res.status}`)
+  if (!res.body) throw new Error('RouteUpdate LLM 응답 body 없음')
+
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder('utf-8')
+  let buffer = ''
+  let finalRec: LLMRouteUpdate | null = null
+
+  while (true) {
+    const { value, done } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    const { events, rest } = parseSseChunks(buffer)
+    buffer = rest
+    for (const ev of events) {
+      if (ev.event === 'final') {
+        const validated = validateRouteUpdateShape(ev.data)
+        if (validated) {
+          finalRec = validated
+        }
+      }
+    }
+  }
+
+  if (!finalRec) throw new Error('RouteUpdate LLM stream 끝났지만 final payload 없음')
   yield { chunk: '', final: finalRec }
 }
