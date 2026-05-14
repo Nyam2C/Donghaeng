@@ -683,11 +683,22 @@ Phase 4 — 여행 탭 · v1 · 4 모드 (D27 state machine)
 │      코드 변경 0 (D27 의 mode router 가 진입점 분기만)
 │
 └─ 4d (Day 16-17) — 지도 모달 C (⊕) ← 기존 명칭 "Phase 4b" 에서 변경
-    ├─ react-native-maps 통합 (카카오는 Google Maps SDK 호환)
-    ├─ POI 핀 컴포넌트 (카카오 좌표 → 마커, 단청 색)
-    ├─ 하단 드래그 시트 (@gorhom/bottom-sheet)
-    ├─ 모달 진입 transition (300ms slide-up)
-    └─ × 닫기 / swipe-down → ON-TRIP COMPANION 복귀
+    ├─ **D31 (2026-05-15)**: 지도 = stylized 미니맵 (react-native-svg + LinearGradient) — react-native-maps 의존 X. D29 정신 일관 (color/그라데이션 + SVG · v1 "직전 제일" 명제). v2 에서 real Google Maps SDK 검토.
+    ├─ stylized 미니맵 (design-preview line 1964-2036 직역):
+    │   ├─ 상단 240px = linear-gradient(135deg, #E8E4DA → #DDD8CC → #C9C3B6) 한지 톤 베이지
+    │   ├─ 청자 그리드 32px square (rgba(74,111,165,0.06))
+    │   ├─ 도로 stub (수평 50% + 수직 55%, rgba(31,31,31,0.08))
+    │   ├─ 현재 위치 = 중앙 큰 잉크 마크 (48x48 celadon)
+    │   └─ POI 핀 = nearbyPois 의 lat/lng → 화면 normalize (현재 위치 중앙 기준)
+    ├─ POI 핀 컴포넌트 (24x24 또는 22x22 원 + 단청 색 (juhong/moss/celadon) + 흰 보더 2px + 그림자 + 카테고리 아이콘 + DM Mono 9px 거리 라벨 "{N}분")
+    ├─ 하단 드래그 시트 (@gorhom/bottom-sheet 또는 PanResponder + Reanimated — 가벼운 옵션 우선):
+    │   ├─ 시트 핸들 36x3 rounded-full
+    │   ├─ 헤더 "인근 {N}곳" + "{location.name} · {tempC}°"
+    │   └─ POI row × N (40x40 그라데이션 thumb + name Noto Serif 14 + meta italic celadon + DM Mono 11 distance)
+    ├─ floating voice (미니맵 하단 안쪽, celadon 잉크 + Noto Serif KR 13px)
+    ├─ × 닫기 (좌상단 44x44, bg-elev + line-strong 보더 + 그림자) → ON-TRIP COMPANION 복귀
+    ├─ 🎙️ 음성 토글 (우상단 44x44) — Phase 5a 진입점, v1 visual only
+    └─ 모달 진입 transition (300ms slide-up Reanimated) / swipe-down 닫기
 
 **v2 보류:** B Voice modal (◐). v1엔 Listening state로 충분.
 
@@ -1093,6 +1104,7 @@ GET  /health            → { "ok": true }
 | 2026-05-14 | **D28: TRIP START 화면 = design-preview ★ TRIP START 정확 매핑 (3 경로 동시 제공)** | design-preview line 1814-1890 의 "★ v1 · TRIP START" 화면을 RN 으로 정확 매핑. 3 경로 동시 제공: (1) 도시 검색 input + 인기 8 chip (강릉/부산/제주/통영/속초/여수/경주/전주) → 누르면 `useTrip.startTrip({city, planning_step:'pois'})` + SCENARIO 01 결 입력 step skip → 자동 여행 탭 navigate (SCENARIO 03), (2) 분위기 4 카드 ("바다 보러" · "산·자연" · "도시 골목" · "조용히") → 분위기 = 결 1개 자동 매핑 ("조용히" → "조용함" 등) → SCENARIO 02 도시 추천 직접 진입 (SCENARIO 01 skip), (3) 하단 dashed 진입점 "어떤 결의 여행이 좋은지 같이 정해볼까요? 대화로 추천 받기 →" → SCENARIO 01 (/plan/new) 진입. design-preview 캡션 *"한 화면에 3가지 경로 동시 제공"* 원칙 일치. 분위기 → 결 1개 매핑이 죄박할 수 있으나 *빠른 진입* 가치 우선 (도시·분위기 명확한 사용자에게 결 입력 강제 X). D19 패턴 (design-preview 가 진실) 일치. plan-design-review Pass 3 (5/10 → 9/10) |
 | 2026-05-14 | **D29: SCENARIO 03/04 spec 확정 (12/23 카운터 · ♥≥3 진입 조건 · "A로 갈래요" seamless · 색 그라데이션 미니맵)** | **SCENARIO 03 (POI 큐레이션):** 헤더 `"{city} · {duration}" + "{♥수} / {LLM프롬프트전체수}"` (예: "12 / 23"). 12 = 좋아요한 수, 23 = LLM 이 제시한 전체 — design-preview 캡션 "사용자가 함께 잡아간" 원칙 일치. 좋아요 history 는 user-style.likedPoiIds 활용 (기존). 하단 prompt 자유 입력 ("더 한적한 카페만…") → LLM 재호출 (dislikedIds + new prompt). "다음 단계" CTA = ♥ ≥ 3 이면 활성화, 미만이면 voice 고목 "몇 개 더 고르면 동선 만들게요" (LLM 재료 충분성 + 친구 톤). **SCENARIO 04 (동선 선택):** route-card 3개 (Plan A/B/C, design-preview line 1743-1799). 미니맵 = **색 그라데이션 + SVG 재구조** (react-native-maps 의존 X · native deps 0 · design-preview 캡션 "색으로만 무드 차이 전달" 그대로). CTA "A로 갈래요" → `useTrip.startTrip(prev → {...prev, planning_step:'on_trip'})` → 여행 탭 자동 ON-TRIP COMPANION 모드 진입 (seamless · 일자 선택 추가 step X · v1 "직전 제일" 명제 일치). **신규 LLM 함수 2개** (D2 정신 · D22 factory 패턴): `recommend-trip-pois.ts` (입력 `{city, userStyle, dislikedIds?, prompt?}` · 출력 `LLMTripPoiList`) + `recommend-routes.ts` (입력 `{city, likedPoiIds[≥3], userStyle}` · 출력 `LLMRouteList`). `shared/types/src/llm.ts` 에 `LLMTripPoiList` + `LLMRouteList` + `LLMRoute` 추가 (옵셔널). 기존 `LLMRecommendation` · `LLMCityRecommendation` 무변경. plan-design-review Pass 7 결정 lock |
 | 2026-05-14 | **D30: Phase 4 sub-phase 재편 — line 643 명세 재해석 (plan-design-review 1차)** | 기존 ENG-PLAN line 643 "Phase 4 — 현장 컴패니언 (Day 9-14)" 명세는 design-preview 의 *짜는 단계* (SCENARIO 03/04) 를 누락. 재편: **Phase 4a' (Day 9-12) = 여행 탭 mode router + TRIP START + SCENARIO 03** (신규) · **Phase 4b' (Day 13-15) = SCENARIO 04 + "A로 갈래요" → ON-TRIP 자동 진입** (신규) · **Phase 4c (Day 9-12 머지됨, PR #5) = ON-TRIP COMPANION** (기존 Phase 4a 산출물 진입점 재배치만 · 코드 변경 0) · **Phase 4d (Day 16-17) = ⊕ 지도 모달** (기존 명칭 "Phase 4b" 에서 변경). 기존 Phase 4a 산출물 8 파일 폐기 X — 진입점만 변경 (`(tabs)/travel.tsx` mode router 가 inline mount). design-preview 가 진실 (D19 패턴) — ENG-PLAN line 643 의 기존 명세 폐기. Phase 4 의 시간 영향 = +7일 (Phase 4a' ~4일 + Phase 4b' ~3일). Phase 5 (TTS) 는 그대로 시프트 (Day 15-18 → Day 22-25). 총 잔여 ~3.5주 (기존 2.5주 + 1주) |
+| 2026-05-15 | **D31: Phase 4d 지도 모달 = stylized 미니맵 (react-native-maps 의존 X) — D29 정신 일관** | Phase 4d 진입 시 ENG-PLAN line 685 ("react-native-maps 통합") 와 design-preview line 1964-2036 (stylized 미니맵 — 한지 톤 베이지 그라데이션 + 청자 그리드 + SVG 도로 stub + 단청 색 POI 핀) 의 충돌 발견. design-preview 가 진실 (D19 패턴) — react-native-svg + LinearGradient 로 stylized 직역. D29 의 "색 그라데이션 + SVG 재구조 · react-native-maps 의존 X" 정신과 완전 일관. native deps 추가 0 (react-native-svg 이미 존재). nearbyPois 의 lat/lng 는 현재 위치 중앙 기준으로 240px 미니맵 안에 normalize. POI 핀 24x24 (juhong/moss/celadon · 흰 보더 2px · 그림자 · 카테고리 아이콘 · DM Mono 9px 거리 라벨). bottom-sheet = @gorhom/bottom-sheet 또는 PanResponder + Reanimated (가벼운 옵션 우선). v1 "직전 제일" 명제 일치. real Google Maps SDK 는 v2 검토 (정밀 좌표·확대·실시간 트래픽 필요 시). ENG-PLAN line 685-690 갱신 |
 
 ---
 

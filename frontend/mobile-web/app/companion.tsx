@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native'
+import { Pressable, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useShallow } from 'zustand/react/shallow'
 
@@ -7,6 +7,7 @@ import type { GpsCoord, KakaoPOI, MomentCard as MomentCardType } from '@trip/typ
 
 import { InkMark } from '@/components/ink-mark'
 import { MomentCard } from '@/components/moment-card'
+import { CompanionMap } from '@/modals/companion-map'
 import { apiFetch } from '@/services/api-client'
 import { resolveNextCard } from '@/services/companion/card-resolver'
 import { streamRecommendation } from '@/services/companion/llm-orchestrator'
@@ -97,6 +98,7 @@ export default function Companion() {
   const { pushAlert, acknowledgeAlert, setGlow } = useCompanionActions()
 
   const [state, setState] = useState<CompanionState>({ status: 'loading' })
+  const [mapOpen, setMapOpen] = useState(false)
   const poiCacheRef = useRef<PoiCacheEntry | null>(null)
 
   /**
@@ -259,16 +261,12 @@ export default function Companion() {
   }, [acknowledgeAlert, setGlow])
 
   const onMapPress = useCallback(() => {
-    // Phase 4d (지도 모달) 의 modals/companion-map route 가 아직 미구현.
-    // silent fail 보다 친구 톤 안내가 manual UX 흐름 자연.
-    const title = '곧 만나요'
-    const message = '지도로 보는 화면은 다음에 만들어둘게요'
-    if (Platform.OS === 'web') {
-      // eslint-disable-next-line no-alert
-      window.alert(`${title}\n\n${message}`)
-    } else {
-      Alert.alert(title, message)
-    }
+    // Phase 4d (D31) — 지도 모달 C (⊕) slide-up
+    setMapOpen(true)
+  }, [])
+
+  const onMapClose = useCallback(() => {
+    setMapOpen(false)
   }, [])
 
   return (
@@ -366,6 +364,9 @@ export default function Companion() {
           </View>
         ) : null}
       </ScrollView>
+
+      {/* Phase 4d 지도 모달 — slide-up 풀스크린 */}
+      <CompanionMap visible={mapOpen} onClose={onMapClose} />
     </View>
   )
 }
