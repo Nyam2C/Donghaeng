@@ -2139,66 +2139,7 @@ footer {
 <div class="section-label">Flow 5–7 · 떠나는 단계 · 머무는 단계</div>
 <main class="board">
 
-  <!-- 5. 예약 플랫폼 -->
-  <div class="phone">
-    <div class="phone-num">SCENARIO 05</div>
-    <div class="phone-frame">
-      <div class="phone-screen">
-        <div class="status-bar"><span>9:42</span><span class="icons">●●● ▮ 83</span></div>
-        <div class="screen-content">
-          <div class="greet">
-            <span class="companion" style="color:var(--celadon)"><svg><use href="#ink-mark"/></svg></span>
-            <span class="greet-name">예약, 한 화면에</span>
-          </div>
-          <p class="voice sm">항공·숙소는 알아서 잡아뒀어요. <em>액티비티</em>는 한 번 봐주세요.</p>
-          <div class="book-row">
-            <div class="book-icon" style="background:var(--celadon-tint); color:var(--celadon)"><svg viewBox="0 0 24 24" style="width:18px;height:18px"><use href="#i-flight"/></svg></div>
-            <div class="book-info">
-              <div class="book-title">ICN → GNG</div>
-              <div class="book-meta">KE 1255 · 09:30 · 14A</div>
-            </div>
-            <div class="book-status done">확정</div>
-          </div>
-          <div class="book-row">
-            <div class="book-icon" style="background:var(--celadon-tint); color:var(--celadon)"><svg viewBox="0 0 24 24" style="width:18px;height:18px"><use href="#i-bed"/></svg></div>
-            <div class="book-info">
-              <div class="book-title">강릉 시그니엘</div>
-              <div class="book-meta">5/13–5/15 · 2박</div>
-            </div>
-            <div class="book-status pending">결제대기</div>
-          </div>
-          <div class="book-row">
-            <div class="book-icon" style="background:var(--moss); color:#fff"><svg viewBox="0 0 24 24" style="width:18px;height:18px"><use href="#i-wave"/></svg></div>
-            <div class="book-info">
-              <div class="book-title">서핑 클래스</div>
-              <div class="book-meta">5/14 14:00 · 안목</div>
-            </div>
-            <div class="book-status suggest">추천</div>
-          </div>
-          <div class="book-row">
-            <div class="book-icon" style="background:var(--amber); color:#5A4515"><svg viewBox="0 0 24 24" style="width:18px;height:18px"><use href="#i-coffee"/></svg></div>
-            <div class="book-info">
-              <div class="book-title">테라로사 사천점</div>
-              <div class="book-meta">5/14 10:00 · 예약 가능</div>
-            </div>
-            <div class="book-status suggest">추천</div>
-          </div>
-          <div class="book-total">
-            <span class="label">현재 합계</span>
-            <span class="amount">₩324,000</span>
-          </div>
-          <div class="cta-bottom">전체 결제로</div>
-        </div>
-        <div class="tab-bar">
-          <div class="tab"><div class="tab-dot"></div>홈</div>
-          <div class="tab"><div class="tab-dot"></div>여행</div>
-          <div class="tab"><div class="tab-dot"></div>대화</div>
-          <div class="tab active"><div class="tab-dot"></div>나</div>
-        </div>
-      </div>
-    </div>
-    <p class="caption"><strong>05 · 예약 플랫폼 (v2+ · \"나\" 탭 sub-page)</strong>항공·숙소·액티비티 한 줄씩. 상태 칩으로 한눈에. 합계는 Fraunces로 친구가 적어주는 느낌. <strong style="color:var(--celadon)">v1엔 탭바에서 제거 — 사용 빈도 낮음. \"나\" 탭 안 sub-page로 v2 본격 구현.</strong></p>
-  </div>
+  <!-- SCENARIO 05 (예약 플랫폼) 제거 — 결제·법무·이용약관은 동행의 friendship 명제와 별개 제품 -->
 
   <!-- 6. 돌발변수 리플랜 -->
   <div class="phone">
@@ -2931,7 +2872,7 @@ footer {
     <li><strong>주색은 1년에 세 번.</strong> 단청 주홍(#C24A36)은 예약 확정 같이 "됐다" 신호에만. 황색(#E8B860)은 변수 알림에만. 액센트의 희소성이 신뢰감을 만들어요.</li>
     <li><strong>숫자도 사람 냄새.</strong> 매칭 점수·총액·구간 시간은 Fraunces 이탤릭으로 — 친구가 손으로 적어준 느낌. 시간·항공편 같은 *데이터*는 DM Mono tabular로 정확하게.</li>
     <li><strong>TTS 화면만 탭바 없음.</strong> 대화 모드는 *그 안에만 있는 시간*. 시스템 chrome이 사라지고 컴패니언과 둘만 남습니다.</li>
-    <li><strong>같은 시스템, 다른 정보밀도.</strong> 추천(02)·POI(03)·예약(05)은 세로 1단 카드. 동선(04)은 시각적 무드 비교. TTS(07)는 가운데 정렬 미니멀. 일관성은 토큰 단위에서, 자유는 레이아웃 단위에서.</li>
+    <li><strong>같은 시스템, 다른 정보밀도.</strong> 추천(02)·POI(03)·홈(B')은 세로 1단 카드. 동선(04·08)은 시각적 무드 비교. 채팅(07)은 명조 1인칭 + 인라인 카드. 일관성은 토큰 단위에서, 자유는 레이아웃 단위에서.</li>
   </ul>
 </section>
 
