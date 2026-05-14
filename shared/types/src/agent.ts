@@ -127,3 +127,37 @@ export const RecommendRoutesInputSchema = z.object({
 })
 
 export type RecommendRoutesInput = z.infer<typeof RecommendRoutesInputSchema>
+
+// ---------------------------------------------------------------------------
+// 채팅 대화 (POST /api/llm/chat) — D32 SCENARIO 07-CHAT
+// llm.ts: LLMChatResponse
+// session.ts: Turn 재사용 (speaker / text / ts)
+// ---------------------------------------------------------------------------
+
+export const TurnSchema = z.object({
+  ts: z.number(),
+  speaker: z.enum(['user', 'companion']),
+  text: z.string(),
+  isAlertEntry: z.boolean().optional(),
+})
+
+export const LLMChatResponseSchema = z.object({
+  response: z.string().min(2).max(300),
+})
+
+export const ChatTripContextSchema = z.object({
+  city: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  planningStep: z.enum(['dates', 'pois', 'routes', 'on_trip']).optional(),
+})
+
+export const ChatConversationInputSchema = z.object({
+  userStyle: UserStyleSchema,
+  history: z.array(TurnSchema).max(50), // 최근 50턴 cap
+  userMessage: z.string().min(1).max(500),
+  tripContext: ChatTripContextSchema.optional(),
+})
+
+export type ChatConversationInput = z.infer<typeof ChatConversationInputSchema>
+export type ChatTripContext = z.infer<typeof ChatTripContextSchema>

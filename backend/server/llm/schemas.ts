@@ -3,8 +3,11 @@
 // zod 정의는 @trip/types/agent 가 single source-of-truth. 여기는 server 전용 상수만.
 
 export {
+  ChatConversationInputSchema,
+  ChatTripContextSchema,
   CityCandidateSchema,
   KakaoPOIRefSchema,
+  LLMChatResponseSchema,
   LLMCityRecommendationSchema,
   LLMRecommendationSchema,
   LLMRouteListSchema,
@@ -16,7 +19,10 @@ export {
   RecommendRoutesInputSchema,
   RecommendTripPoisInputSchema,
   TripPoiCandidateSchema,
+  TurnSchema,
   UserStyleSchema,
+  type ChatConversationInput,
+  type ChatTripContext,
   type RecommendCitiesInput,
   type RecommendPoisInput,
   type RecommendRoutesInput,

@@ -5,6 +5,7 @@
 
 import { Hono } from 'hono'
 import { streamSSE } from 'hono/streaming'
+import { chatConversation } from '../../llm/functions/chat-conversation'
 import { recommendCities } from '../../llm/functions/recommend-cities'
 import { recommendPois } from '../../llm/functions/recommend-pois'
 import { recommendRoutes } from '../../llm/functions/recommend-routes'
@@ -209,6 +210,39 @@ llmRoutes.post('/routes', async (c) => {
         routes: [] as unknown[],
         note: '음, 잠깐만요. 동선을 다시 짜고 있어요.',
       }
+      await stream.writeSSE({ event: 'final', data: JSON.stringify(fallback) })
+      await stream.writeSSE({
+        event: 'done',
+        data: JSON.stringify({ hallucinationDetected: false }),
+      })
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// POST /api/llm/chat — D32 SCENARIO 07-CHAT 채팅 대화
+// ---------------------------------------------------------------------------
+llmRoutes.post('/chat', async (c) => {
+  let raw: unknown
+  try {
+    raw = await c.req.json()
+  } catch {
+    return c.json({ error: 'invalid JSON body' }, 400)
+  }
+
+  return streamSSE(c, async (stream) => {
+    await stream.writeSSE({ event: 'start', data: JSON.stringify({ phase: 'chat' }) })
+
+    try {
+      const { result, hallucinationDetected, trace } = await chatConversation(
+        raw as Parameters<typeof chatConversation>[0],
+      )
+      await stream.writeSSE({ event: 'raw', data: JSON.stringify({ trace }) })
+      await stream.writeSSE({ event: 'final', data: JSON.stringify(result) })
+      await stream.writeSSE({ event: 'done', data: JSON.stringify({ hallucinationDetected }) })
+    } catch (err) {
+      console.warn('[llm/chat] chatConversation threw', err)
+      const fallback = { response: '음, 잠깐만요. 다시 한번 말해줄래요?' }
       await stream.writeSSE({ event: 'final', data: JSON.stringify(fallback) })
       await stream.writeSSE({
         event: 'done',
