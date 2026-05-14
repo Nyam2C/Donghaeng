@@ -124,3 +124,14 @@ export const KOREAN_CITY_WHITELIST: readonly string[] = [
 ] as const
 
 export const KOREAN_CITY_SET: ReadonlySet<string> = new Set<string>(KOREAN_CITY_WHITELIST)
+
+/**
+ * Whitelist 검증 — 공백/특수문자 split 의 *어느 토큰이라도* whitelist 에 있으면 통과.
+ * 예: "서울" ✓ · "서울 성수" ✓ · "부산 해운대" ✓ · "제주 남부" ✓
+ *    · "설악산 속초" ✓ (속초) · "지리산 함양" ✓ (함양) · "도쿄" ✗ · "오사카 도톤보리" ✗
+ */
+export function isKoreanCity(name: string): boolean {
+  if (KOREAN_CITY_SET.has(name)) return true
+  const tokens = name.split(/[\s,·]+/).filter((t) => t.length > 0)
+  return tokens.some((t) => KOREAN_CITY_SET.has(t))
+}
