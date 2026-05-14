@@ -15,6 +15,7 @@ import type { CityCandidate, LLMCityRecommendation } from '@trip/types'
 
 import { InkMark } from '@/components/ink-mark'
 import { streamCityRecommendation } from '@/services/companion/llm-orchestrator'
+import { useTrip } from '@/stores/trip'
 import { useUserStyle } from '@/stores/user-style'
 import { lightColors } from '@/theme'
 import * as fonts from '@/theme/fonts'
@@ -200,6 +201,7 @@ export default function PlanRecommend() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const tags = useUserStyle((s) => s.tags)
+  const startTrip = useTrip((s) => s.startTrip)
 
   const [state, setState] = useState<RecommendState>({ status: 'loading' })
   const [promptText, setPromptText] = useState('')
@@ -258,11 +260,20 @@ export default function PlanRecommend() {
 
   const handleSelectCity = useCallback(
     (city: RecommendedCity) => {
-      // 다음 phase: POI 리스트 (SCENARIO 03) 로 navigation
-      // eslint-disable-next-line no-console
-      console.log('[plan/recommend] 도시 선택:', city.name, '· 결:', tags)
+      // D28 — 도시 선택 시 SCENARIO 03 POI 큐레이션 직접 진입
+      // 일자는 default 2박 3일 (Phase 4b' 에서 사용자 조정 추가 예정)
+      const today = new Date().toISOString().slice(0, 10)
+      const endDate = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10)
+      startTrip({
+        city: city.name,
+        startDate: today,
+        endDate,
+        vibeTags: tags,
+        planning_step: 'pois',
+      })
+      router.push('/(tabs)/travel')
     },
-    [tags],
+    [tags, startTrip, router],
   )
 
   const handleSendPrompt = useCallback(() => {

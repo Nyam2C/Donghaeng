@@ -7,6 +7,7 @@ import { Hono } from 'hono'
 import { streamSSE } from 'hono/streaming'
 import { recommendCities } from '../../llm/functions/recommend-cities'
 import { recommendPois } from '../../llm/functions/recommend-pois'
+import { recommendTripPois } from '../../llm/functions/recommend-trip-pois'
 
 const llmRoutes = new Hono()
 
@@ -83,6 +84,87 @@ llmRoutes.post('/cities', async (c) => {
           { name: '거제', reason: '섬 사이 조용한 풍경', match: 77 },
         ],
         note: '비슷한 결, 다른 결로 섞었어요.',
+      }
+      await stream.writeSSE({ event: 'final', data: JSON.stringify(fallback) })
+      await stream.writeSSE({
+        event: 'done',
+        data: JSON.stringify({ hallucinationDetected: false }),
+      })
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// POST /api/llm/trip-pois — D29 짜는 단계 POI 큐레이션 (SCENARIO 03)
+// ---------------------------------------------------------------------------
+llmRoutes.post('/trip-pois', async (c) => {
+  let raw: unknown
+  try {
+    raw = await c.req.json()
+  } catch {
+    return c.json({ error: 'invalid JSON body' }, 400)
+  }
+
+  return streamSSE(c, async (stream) => {
+    const city =
+      raw && typeof raw === 'object' && typeof (raw as { city?: unknown }).city === 'string'
+        ? (raw as { city: string }).city
+        : null
+    await stream.writeSSE({ event: 'start', data: JSON.stringify({ phase: 'trip-pois', city }) })
+
+    try {
+      const { result, hallucinationDetected, trace, kakaoPoolSize, kakaoFetchFailed } =
+        await recommendTripPois(raw as Parameters<typeof recommendTripPois>[0])
+      await stream.writeSSE({
+        event: 'raw',
+        data: JSON.stringify({ trace, kakaoPoolSize, kakaoFetchFailed }),
+      })
+      await stream.writeSSE({ event: 'final', data: JSON.stringify(result) })
+      await stream.writeSSE({
+        event: 'done',
+        data: JSON.stringify({ hallucinationDetected, kakaoFetchFailed }),
+      })
+    } catch (err) {
+      console.warn('[llm/trip-pois] recommendTripPois threw', err)
+      const fallback = {
+        pois: [
+          {
+            id: 'mock-fallback-1',
+            name: '시내 카페거리',
+            category: '카페',
+            reason: '한적한 분위기 그 결',
+            match: 80,
+          },
+          {
+            id: 'mock-fallback-2',
+            name: '전통 시장',
+            category: '맛집',
+            reason: '동네 손맛 진짜',
+            match: 82,
+          },
+          {
+            id: 'mock-fallback-3',
+            name: '박물관',
+            category: '문화',
+            reason: '이 동네 이야기',
+            match: 78,
+          },
+          {
+            id: 'mock-fallback-4',
+            name: '자연 산책로',
+            category: '관광',
+            reason: '걷기 좋은 길',
+            match: 80,
+          },
+          {
+            id: 'mock-fallback-5',
+            name: '야경 명소',
+            category: '관광',
+            reason: '저녁 빛 좋아요',
+            match: 81,
+          },
+        ],
+        note: '잠깐, 후보를 다시 골라봤어요',
       }
       await stream.writeSSE({ event: 'final', data: JSON.stringify(fallback) })
       await stream.writeSSE({

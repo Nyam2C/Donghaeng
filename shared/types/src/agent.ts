@@ -67,3 +67,30 @@ export const RecommendCitiesInputSchema = z.object({
 })
 
 export type RecommendCitiesInput = z.infer<typeof RecommendCitiesInputSchema>
+
+// ---------------------------------------------------------------------------
+// 짜는 단계 POI 큐레이션 (POST /api/llm/trip-pois) — D29 SCENARIO 03
+// llm.ts: TripPoiCandidate / LLMTripPoiList
+// ---------------------------------------------------------------------------
+
+export const TripPoiCandidateSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  category: z.string(),
+  reason: z.string(),
+  match: z.number(),
+})
+
+export const LLMTripPoiListSchema = z.object({
+  pois: z.array(TripPoiCandidateSchema).min(5).max(30),
+  note: z.string().min(8).max(50),
+})
+
+export const RecommendTripPoisInputSchema = z.object({
+  city: z.string().min(1),
+  userStyle: UserStyleSchema,
+  dislikedIds: z.array(z.string()).optional(),
+  prompt: z.string().optional(),
+})
+
+export type RecommendTripPoisInput = z.infer<typeof RecommendTripPoisInputSchema>

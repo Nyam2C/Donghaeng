@@ -7,11 +7,15 @@ export {
   KakaoPOIRefSchema,
   LLMCityRecommendationSchema,
   LLMRecommendationSchema,
+  LLMTripPoiListSchema,
   RecommendCitiesInputSchema,
   RecommendPoisInputSchema,
+  RecommendTripPoisInputSchema,
+  TripPoiCandidateSchema,
   UserStyleSchema,
   type RecommendCitiesInput,
   type RecommendPoisInput,
+  type RecommendTripPoisInput,
 } from '@trip/types'
 
 // ---------------------------------------------------------------------------

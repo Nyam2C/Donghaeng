@@ -44,4 +44,6 @@ app.route('/api/tts-proxy', ttsProxyRoutes)
 export default {
   port: 3000,
   fetch: app.fetch,
+  // Phase 4a' — Kakao fetch + Claude CLI 합산 응답이 default 10s 초과. SSE idle 허용 ↑
+  idleTimeout: 120,
 }
