@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { CityCandidate, LLMCityRecommendation } from '@trip/types'
 
 import { InkMark } from '@/components/ink-mark'
+import { TabBar } from '@/components/tab-bar'
 import { streamCityRecommendation } from '@/services/companion/llm-orchestrator'
 import { useTrip } from '@/stores/trip'
 import { useUserStyle } from '@/stores/user-style'
@@ -451,7 +452,7 @@ export default function PlanRecommend() {
                   gap: spacing.sm + 4,
                   padding: spacing.sm + 4,
                   borderRadius: radius.cardLarge,
-                  backgroundColor: lightColors.bg,
+                  backgroundColor: lightColors.bgElev,
                   borderWidth: 1,
                   borderColor: lightColors.line,
                   marginBottom: spacing.sm + 2,
@@ -531,7 +532,7 @@ export default function PlanRecommend() {
                   gap: spacing.sm + 4,
                   padding: spacing.sm + 4,
                   borderRadius: radius.cardLarge,
-                  backgroundColor: lightColors.bg,
+                  backgroundColor: lightColors.bgElev,
                   borderWidth: 1,
                   borderColor: lightColors.line,
                   marginBottom: spacing.sm + 2,
@@ -639,7 +640,7 @@ export default function PlanRecommend() {
             marginTop: spacing.sm + 6,
             flexDirection: 'row',
             alignItems: 'center',
-            backgroundColor: lightColors.bg,
+            backgroundColor: lightColors.bgElev,
             borderWidth: 1,
             borderColor: lightColors.line,
             borderRadius: radius.cardLarge,
@@ -722,6 +723,7 @@ export default function PlanRecommend() {
           </Text>
         </Pressable>
       </ScrollView>
+      <TabBar />
     </View>
   )
 }

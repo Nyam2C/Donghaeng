@@ -4,6 +4,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { InkMark } from '@/components/ink-mark'
+import { TabBar } from '@/components/tab-bar'
 import { useUserStyle } from '@/stores/user-style'
 import { lightColors } from '@/theme'
 import * as fonts from '@/theme/fonts'
@@ -233,7 +234,7 @@ export default function PlanNew() {
           style={{
             flexDirection: 'row',
             alignItems: 'center',
-            backgroundColor: lightColors.bg,
+            backgroundColor: lightColors.bgElev,
             borderWidth: 1,
             borderColor: lightColors.line,
             borderRadius: radius.cardLarge,
@@ -344,6 +345,7 @@ export default function PlanNew() {
           </Text>
         </Pressable>
       </ScrollView>
+      <TabBar />
     </View>
   )
 }

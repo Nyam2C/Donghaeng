@@ -30,10 +30,18 @@ export default function RootLayout() {
 
   return (
     <>
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          // D41 — stack 화면 배경 통일 (#FFFFFF). plan/* 같은 (tabs) 밖 화면에서
+          // root html 누런 톤이 비치는 issue 회피.
+          contentStyle: { backgroundColor: '#FFFFFF' },
+        }}
+      >
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="plan/new" options={{ title: '간단 일정 시작' }} />
+        <Stack.Screen name="plan/new" options={{ headerShown: false }} />
+        <Stack.Screen name="plan/recommend" options={{ headerShown: false }} />
         <Stack.Screen name="companion" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
