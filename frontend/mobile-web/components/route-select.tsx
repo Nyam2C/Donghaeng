@@ -64,12 +64,12 @@ function SkeletonShimmer({ width, height }: { width: number; height: number }) {
   }))
   return (
     <View
-      pointerEvents="none"
       style={{
         position: 'absolute',
         top: 0,
         left: 0,
         width,
+        pointerEvents: 'none',
         height,
         overflow: 'hidden',
       }}
