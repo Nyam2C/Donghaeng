@@ -93,7 +93,7 @@ function PermissionCard({ icon, title, meta, accessibilityLabel }: PermissionCar
         borderWidth: 1,
         borderColor: lightColors.line,
         borderRadius: radius.card,
-        backgroundColor: lightColors.bg,
+        backgroundColor: lightColors.bgElev,
         opacity: pressed ? 0.92 : 1,
       })}
     >

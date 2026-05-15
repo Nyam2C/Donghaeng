@@ -505,7 +505,7 @@ export function PoiCuration({ trip }: PoiCurationProps) {
           marginTop: spacing.md,
           flexDirection: 'row',
           alignItems: 'center',
-          backgroundColor: lightColors.bg,
+          backgroundColor: lightColors.bgElev,
           borderWidth: 1,
           borderColor: lightColors.line,
           borderRadius: radius.cardLarge,

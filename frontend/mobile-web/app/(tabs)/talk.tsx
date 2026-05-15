@@ -408,7 +408,7 @@ export default function Talk() {
               width: 44,
               height: 44,
               borderRadius: 22,
-              backgroundColor: lightColors.bg,
+              backgroundColor: lightColors.bgElev,
               borderWidth: 1,
               borderColor: lightColors.line,
               alignItems: 'center',
@@ -581,7 +581,7 @@ export default function Talk() {
             blurOnSubmit={false}
             style={{
               flex: 1,
-              backgroundColor: lightColors.bg,
+              backgroundColor: lightColors.bgElev,
               borderWidth: 1,
               borderColor: lightColors.line,
               borderRadius: radius.pill,
