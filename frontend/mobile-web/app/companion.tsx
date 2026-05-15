@@ -49,6 +49,33 @@ const WEATHER_POLL_INTERVAL_MS = 60 * 60 * 1000 // 1시간
 const POI_CACHE_TTL_MS = 5 * 60 * 1000 // 5분
 const POI_CACHE_RADIUS_M = 1000 // 1km
 
+/**
+ * D15 권한 lazy 패턴의 dev/web 보완 — GPS 권한 거부/실패 시 active trip 의 city 기반 default
+ * 좌표 사용. companion-map.tsx 의 FALLBACK_GPS (강릉) 와 동일한 보수적 fallback.
+ *
+ * 사용 가능성: (1) web 브라우저가 위치 권한 거부 (2) 디바이스 GPS off (3) 사용자가 권한 X
+ * 모두 "여행 떠나기 전 미리 보기" 결로 자연스러움 — AWAY 카드보다 사용자 친화적.
+ *
+ * city 미상이면 강릉 default (design-preview 예시 도시).
+ */
+const CITY_COORDS: Record<string, GpsCoord> = {
+  강릉: { lat: 37.7917, lng: 128.9015 },
+  부산: { lat: 35.1796, lng: 129.0756 },
+  제주: { lat: 33.4996, lng: 126.5312 },
+  통영: { lat: 34.8544, lng: 128.4332 },
+  속초: { lat: 38.207, lng: 128.5918 },
+  여수: { lat: 34.7604, lng: 127.6622 },
+  경주: { lat: 35.8562, lng: 129.2247 },
+  전주: { lat: 35.8242, lng: 127.148 },
+  서울: { lat: 37.5665, lng: 126.978 },
+}
+const DEFAULT_FALLBACK_GPS: GpsCoord = CITY_COORDS.강릉
+
+function cityFallbackGps(city: string | undefined): GpsCoord {
+  if (!city) return DEFAULT_FALLBACK_GPS
+  return CITY_COORDS[city] ?? DEFAULT_FALLBACK_GPS
+}
+
 interface PoiCacheEntry {
   gps: GpsCoord
   pois: KakaoPOI[]
@@ -117,9 +144,16 @@ export default function Companion() {
     try {
       gps = await getCurrentGps()
     } catch {
-      setState({ status: 'away', reason: 'permission' })
-      setGlow('away')
-      return
+      // D15 권한 lazy 패턴 보완 — GPS 거부/실패 시 active trip 의 city 기반 fallback 좌표 사용.
+      // active 가 있으면 그 도시 좌표로 nearby POI 조회 (출발 전 미리 보기 결).
+      // active 없으면 AWAY 카드 유지 (홈에서 ON-TRIP 직접 진입 같은 비정상 케이스).
+      const tripCity = useTrip.getState().active?.city
+      if (!tripCity) {
+        setState({ status: 'away', reason: 'permission' })
+        setGlow('away')
+        return
+      }
+      gps = cityFallbackGps(tripCity)
     }
 
     // POI cache hit?
