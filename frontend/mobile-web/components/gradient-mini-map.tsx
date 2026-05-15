@@ -79,8 +79,14 @@ export function GradientMiniMap({ letter, height = 56, style }: GradientMiniMapP
          radial-gradient(circle at 30% 50%, rgba(255,255,255,0.2), transparent 30%),
          radial-gradient(circle at 70% 70%, rgba(255,255,255,0.15), transparent 25%) */}
       <View
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          pointerEvents: 'none',
+        }}
       >
         <Svg width="100%" height="100%" preserveAspectRatio="none">
           <Defs>

@@ -97,8 +97,14 @@ export function MiniMap({
 
       {/* 청자 32px 그리드 overlay — SVG Pattern */}
       <View
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          pointerEvents: 'none',
+        }}
       >
         <Svg width="100%" height="100%">
           <Defs>
@@ -112,7 +118,6 @@ export function MiniMap({
 
       {/* 도로 stub — 수평 50% / 수직 55% */}
       <View
-        pointerEvents="none"
         style={{
           position: 'absolute',
           top: '50%',
@@ -120,10 +125,10 @@ export function MiniMap({
           right: 0,
           height: 3,
           backgroundColor: ROAD_INK,
+          pointerEvents: 'none',
         }}
       />
       <View
-        pointerEvents="none"
         style={{
           position: 'absolute',
           top: 0,
@@ -131,12 +136,12 @@ export function MiniMap({
           left: '55%',
           width: 2,
           backgroundColor: ROAD_INK,
+          pointerEvents: 'none',
         }}
       />
 
       {/* 중앙 큰 잉크 마크 (사용자 위치) — 48x48 celadon */}
       <View
-        pointerEvents="none"
         style={{
           position: 'absolute',
           left: '50%',
@@ -145,6 +150,7 @@ export function MiniMap({
           height: 48,
           marginLeft: -24,
           marginTop: -24,
+          pointerEvents: 'none',
         }}
       >
         <InkMark size={48} glow="normal" />
@@ -154,7 +160,6 @@ export function MiniMap({
       {normalized.map(({ poi, left, top }) => (
         <View
           key={poi.id}
-          pointerEvents="none"
           style={{
             position: 'absolute',
             left: `${left}%`,
@@ -162,6 +167,7 @@ export function MiniMap({
             // 핀 wrapper 의 중심 (24x24 핀 기준 -12, -12) — Text 라벨 포함 살짝 위로
             marginLeft: -12,
             marginTop: -12,
+            pointerEvents: 'none',
           }}
         >
           <PoiPin
