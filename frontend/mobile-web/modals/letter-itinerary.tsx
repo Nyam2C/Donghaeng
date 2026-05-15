@@ -11,9 +11,9 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useShallow } from 'zustand/react/shallow'
 
-import type { LLMLetter, LLMRoute, LLMRouteStop, Trip } from '@trip/types'
+import type { LLMChatResponse, LLMLetter, LLMRoute, LLMRouteStop, Trip } from '@trip/types'
 
-import { streamLetter } from '@/services/companion/llm-orchestrator'
+import { streamChat, streamLetter } from '@/services/companion/llm-orchestrator'
 import { useSession } from '@/stores/session'
 import { useUserStyle } from '@/stores/user-style'
 import { lightColors } from '@/theme'
@@ -403,20 +403,60 @@ export function LetterItinerary({ visible, onClose, trip, activeRoute }: LetterI
     onClose()
   }, [onClose])
 
-  // D39 v2.1 — 답장 쓰기: modal 닫고 채팅 탭 진입 + 안내 user turn append.
-  // 사용자가 "일정 바꾸고 싶어요" 발화한 것처럼 turn 박아 → 채팅에서 streamChat 이 응답 (자동 X — 사용자가 추가 메시지 입력 시).
+  // D39 v2.1 + QA fix (ISSUE-003) — 답장 쓰기: user turn + 동행 자동 응답 둘 다 박고 채팅 진입.
+  // streamChat 은 background fire-and-forget. 사용자 채팅 탭 진입 시점에 user turn 만 보이거나
+  // 이미 동행 응답까지 도착 (LLM 빠르면). 자연스러운 "타이핑 중" 느낌.
   const handleReply = useCallback(() => {
+    const userText = '일정 바꾸고 싶어요'
     appendTurn({
       ts: Date.now(),
       speaker: 'user',
-      text: '일정 바꾸고 싶어요',
+      text: userText,
     })
     onClose()
+
+    // background streamChat — 응답 도착 시 companion turn append. 실패 시 silent (친구 톤).
+    void (async () => {
+      try {
+        const us = useUserStyle.getState()
+        const history = useSession.getState().turns.slice(-50)
+        let final: LLMChatResponse | undefined
+        for await (const ev of streamChat({
+          userStyle: {
+            tags: us.tags,
+            likedPoiIds: us.likedPoiIds,
+            dislikedPoiIds: us.dislikedPoiIds,
+          },
+          history,
+          userMessage: userText,
+          tripContext: {
+            city: trip.city,
+            startDate: trip.startDate,
+            endDate: trip.endDate,
+            planningStep: trip.planning_step,
+          },
+        })) {
+          if (ev.final) {
+            final = ev.final
+            break
+          }
+        }
+        if (final) {
+          useSession
+            .getState()
+            .appendTurn({ ts: Date.now(), speaker: 'companion', text: final.response })
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('[letter-itinerary] handleReply streamChat 실패:', err)
+      }
+    })()
+
     // modal slide-down 후 navigate (race 회피 위해 짧은 delay)
     setTimeout(() => {
       router.push('/(tabs)/talk')
     }, 320)
-  }, [appendTurn, onClose, router])
+  }, [appendTurn, onClose, router, trip])
 
   const currentLetter = currentDay ? (lettersByDay[currentDay.index] ?? null) : null
   const isLetterLoading = currentDay ? letterLoadingDay === currentDay.index : false
