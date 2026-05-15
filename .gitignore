@@ -90,3 +90,4 @@ coverage/
 
 # Backup
 docs/design-preview_back_up.html
+.gstack/
