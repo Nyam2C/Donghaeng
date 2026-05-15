@@ -121,6 +121,15 @@ export function RouteSelect({ trip }: RouteSelectProps) {
     setState({ status: 'loading' })
     try {
       const current = useUserStyle.getState()
+      // D40 (v1.8) — likedPois map 이 있으면 id → name 으로 poiNames 빌드.
+      // LLM 이 stop.name 에 진짜 POI 이름 박는 단서. 미설정 시 LLM 은 placeholder.
+      const poiNames: Record<string, string> | undefined = current.likedPois
+        ? Object.fromEntries(
+            current.likedPoiIds
+              .map((id) => [id, current.likedPois?.[id]?.name] as const)
+              .filter((p): p is [string, string] => typeof p[1] === 'string' && p[1].length > 0),
+          )
+        : undefined
       const gen = streamRoutes({
         city: trip.city,
         likedPoiIds: current.likedPoiIds,
@@ -129,6 +138,7 @@ export function RouteSelect({ trip }: RouteSelectProps) {
           likedPoiIds: current.likedPoiIds,
           dislikedPoiIds: current.dislikedPoiIds,
         },
+        poiNames: poiNames && Object.keys(poiNames).length > 0 ? poiNames : undefined,
       })
       let final: LLMRouteList | undefined
       for await (const ev of gen) {

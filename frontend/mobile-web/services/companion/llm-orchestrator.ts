@@ -407,6 +407,8 @@ export interface RoutesOrchestratorInput {
   city: string
   likedPoiIds: string[]
   userStyle: UserStyle
+  /** D40 (v1.8) 옵셔널 — id → POI 표시 이름. LLM 이 stop.name 에 진짜 이름 박을 단서. */
+  poiNames?: Record<string, string>
 }
 
 /** SSE event.data 가 LLMRouteList shape 인지 검증 (D2 정신). */

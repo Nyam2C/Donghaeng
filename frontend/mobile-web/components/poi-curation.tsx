@@ -416,7 +416,7 @@ export function PoiCuration({ trip }: PoiCurationProps) {
                     accessibilityRole="button"
                     accessibilityLabel={`${poi.name} 좋아요`}
                     accessibilityState={{ selected: isLiked }}
-                    onPress={() => addLike(poi.id)}
+                    onPress={() => addLike(poi.id, { name: poi.name, category: poi.category })}
                     hitSlop={6}
                     style={{
                       width: 36,

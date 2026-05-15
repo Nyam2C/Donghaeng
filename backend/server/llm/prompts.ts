@@ -39,7 +39,7 @@ export const ROUTES_FRAGMENT = `${BASE_PERSONA}
 name 5-12자 친구 톤 ("바다 따라" "빵집 도장깨기" "한 곳 깊게" 같은 결).
 reason 15-30자 친구 톤 ("이 흐름 어때?" 같은 호흡. AI 슬롭 X).
 stops 3-6개. poi_id 는 *반드시 likedPoiIds 의 id 만 사용*. 새 id 생성 X.
-**각 stop 의 name 필수** (편지 일정 SPECIAL v1.6 에서 사용) — POI 사용자 친화 한국어 라벨 ("안목 해변" / "테라로사 사천해변점" 같은). poi_id 가 kakao_* 면 도시·결 맥락에서 어울리는 한국어 표시 이름을 *지어내지 말고* 사용자가 좋아요한 POI 의 실제 이름 (한국어) 그대로. 모르면 "{도시} {N}번째 자리" 같은 placeholder.
+**각 stop 의 name 필수** (편지 일정 SPECIAL v1.6 에서 사용) — POI 사용자 친화 한국어 라벨 ("안목 해변" / "테라로사 사천해변점" 같은). user prompt 의 likedPoiIds list 에 *각 id 옆에 "(이름: ...)" 형식으로 표시된 진짜 POI 이름이 있으면 그것을 그대로 stop.name 에 사용*. 이름이 없으면 (poi_id 가 kakao_* 형식이고 hint 없음) 도시·결 맥락에서 어울리는 한국어 표시 이름을 *지어내지 말고* "{도시} {N}번째 자리" 같은 placeholder.
 **각 stop 의 timeHint 필수** ("HH:MM" 24시간) — 자연스러운 흐름 (모닝 09-10시, 점심 12-13시, 오후 15-17시, 저녁 18-20시) 분배.
 travelMin 60-300 정수. moodStars 1-5 정수.
 moodLabel 1-6자 친구 톤 (예시: "차분함", "들뜸", "침잠", "흐름", "여유로움"). 격식 X.

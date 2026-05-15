@@ -130,6 +130,9 @@ export const RecommendRoutesInputSchema = z.object({
   city: z.string().min(1),
   likedPoiIds: z.array(z.string().min(1)).min(3).max(30),
   userStyle: UserStyleSchema,
+  /** D40 (v1.8) 옵셔널 — id → 사용자 친화 POI 이름 map. LLM 이 stop.name 에 진짜 이름 박는 단서.
+   *  미제공 시 LLM 은 placeholder ("{도시} {N}번째 자리") 박음. */
+  poiNames: z.record(z.string(), z.string().min(1).max(40)).optional(),
 })
 
 export type RecommendRoutesInput = z.infer<typeof RecommendRoutesInputSchema>
