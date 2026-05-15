@@ -56,10 +56,12 @@ function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v))
 }
 
-// design-preview 그리드/도로 색 — theme/colors.ts 토큰 없음 (직접 hex 직역)
+// design-preview 그리드/도로 색 — GRID_STROKE/ROAD_INK 은 미니맵 전용 미세 alpha
+// (theme 토큰 추가 가치 낮음 — mini-map 한 곳만 사용)
 const GRID_STROKE = 'rgba(74,111,165,0.06)'
 const ROAD_INK = 'rgba(31,31,31,0.08)'
-const LINE_STRONG = 'rgba(31,31,31,0.15)'
+// LINE_STRONG 은 D39 P3 polish 에서 theme.lineStrong 으로 이동 (3 곳 공통 사용)
+const LINE_STRONG = lightColors.lineStrong
 const PAPER_BG_COLORS = ['#E8E4DA', '#DDD8CC', '#C9C3B6'] as const
 
 export function MiniMap({

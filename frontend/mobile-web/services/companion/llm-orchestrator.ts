@@ -5,6 +5,7 @@ import type {
   LLMChatResponse,
   LLMCityRecommendation,
   LLMIntentExtraction,
+  LLMLetter,
   LLMRecommendation,
   LLMRoute,
   LLMRouteList,
@@ -735,5 +736,77 @@ export async function* streamRouteUpdate(
   }
 
   if (!finalRec) throw new Error('RouteUpdate LLM stream 끝났지만 final payload 없음')
+  yield { chunk: '', final: finalRec }
+}
+
+// ---------------------------------------------------------------------------
+// D39 (v2.1) — generateLetter SPECIAL 편지 일정 (POST /api/llm/letter)
+// design-preview line 2074-2135 의 letter-body 톤. day stops → friend-tone paragraphs.
+// ---------------------------------------------------------------------------
+
+const LETTER_FALLBACK_FIXTURE: LLMLetter = {
+  paragraphs: [
+    '윤서님, 안녕하세요. 오늘 결 어때요?',
+    '{TIME:11:30} 지금쯤 {PLACE:안목 해변}에서 모닝커피 한 잔하고 계시겠네요. {EM:바람이 좀 있어요}.',
+    '오늘 결, 천천히 흘러가도 괜찮아요.',
+  ],
+  signature: '— 오늘의 동행',
+}
+
+export interface LetterOrchestratorInput {
+  city: string
+  dayIndex: number
+  totalDays: number
+  stops: LLMRouteStop[]
+  dateLabel: string
+  userStyle: UserStyle
+}
+
+/** SSE event.data 가 LLMLetter shape 인지 검증 (D2 정신). */
+function validateLetterShape(raw: unknown): LLMLetter | null {
+  if (!raw || typeof raw !== 'object') return null
+  const f = raw as Partial<LLMLetter>
+  if (!Array.isArray(f.paragraphs) || f.paragraphs.length === 0) return null
+  if (!f.paragraphs.every((p) => typeof p === 'string' && p.length > 0)) return null
+  if (typeof f.signature !== 'string' || f.signature.length === 0) return null
+  return { paragraphs: f.paragraphs, signature: f.signature }
+}
+
+export async function* streamLetter(
+  input: LetterOrchestratorInput,
+): AsyncGenerator<{ chunk: string; final?: LLMLetter }> {
+  if (USE_MOCKS) {
+    yield { chunk: '', final: LETTER_FALLBACK_FIXTURE }
+    return
+  }
+
+  const res = await fetch(`${apiBaseUrl}/api/llm/letter`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', accept: 'text/event-stream' },
+    body: JSON.stringify(input),
+  })
+  if (!res.ok) throw new Error(`Letter LLM HTTP ${res.status}`)
+  if (!res.body) throw new Error('Letter LLM 응답 body 없음')
+
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder('utf-8')
+  let buffer = ''
+  let finalRec: LLMLetter | null = null
+
+  while (true) {
+    const { value, done } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    const { events, rest } = parseSseChunks(buffer)
+    buffer = rest
+    for (const ev of events) {
+      if (ev.event === 'final') {
+        const validated = validateLetterShape(ev.data)
+        if (validated) finalRec = validated
+      }
+    }
+  }
+
+  if (!finalRec) throw new Error('Letter LLM stream 끝났지만 final payload 없음')
   yield { chunk: '', final: finalRec }
 }

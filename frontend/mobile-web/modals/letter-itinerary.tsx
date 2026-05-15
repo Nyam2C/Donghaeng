@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'expo-router'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native'
 import Animated, {
   Easing,
@@ -8,9 +9,13 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useShallow } from 'zustand/react/shallow'
 
-import type { LLMRoute, LLMRouteStop, Trip } from '@trip/types'
+import type { LLMLetter, LLMRoute, LLMRouteStop, Trip } from '@trip/types'
 
+import { streamLetter } from '@/services/companion/llm-orchestrator'
+import { useSession } from '@/stores/session'
+import { useUserStyle } from '@/stores/user-style'
 import { lightColors } from '@/theme'
 import * as fonts from '@/theme/fonts'
 import { radius, spacing } from '@/theme/spacing'
@@ -133,12 +138,97 @@ function ymdLabel(d: Date): string {
   return `${d.getMonth() + 1}월 ${d.getDate()}일 · ${WEEKDAY_KOR[d.getDay()]}요일`
 }
 
+// ── D39 v2.1 LLM paragraph marker parser ────────────────────────────
+// 본문 paragraph 안의 inline marker:
+//   {TIME:HH:MM}   → DM Mono 시간
+//   {PLACE:이름}    → italic celadon 장소
+//   {EM:강조어}      → italic celadon 강조
+
+interface LetterSegment {
+  kind: 'text' | 'time' | 'place' | 'em'
+  value: string
+}
+
+function parseLetterParagraph(text: string): LetterSegment[] {
+  const segments: LetterSegment[] = []
+  const regex = /\{(TIME|PLACE|EM):([^}]+)\}/g
+  let lastIndex = 0
+  let match: RegExpExecArray | null = regex.exec(text)
+  while (match !== null) {
+    if (match.index > lastIndex) {
+      segments.push({ kind: 'text', value: text.slice(lastIndex, match.index) })
+    }
+    const kind = match[1].toLowerCase() as 'time' | 'place' | 'em'
+    segments.push({ kind, value: match[2] })
+    lastIndex = match.index + match[0].length
+    match = regex.exec(text)
+  }
+  if (lastIndex < text.length) {
+    segments.push({ kind: 'text', value: text.slice(lastIndex) })
+  }
+  return segments
+}
+
+function LetterParagraph({ text }: { text: string }) {
+  const segments = useMemo(() => parseLetterParagraph(text), [text])
+  return (
+    <Text
+      style={{
+        fontFamily: fonts.family.voice,
+        fontSize: 14,
+        lineHeight: 14 * 1.75,
+        color: lightColors.text,
+        marginBottom: 14,
+      }}
+    >
+      {segments.map((seg, idx) => {
+        const key = `${idx}-${seg.kind}-${seg.value.slice(0, 10)}`
+        if (seg.kind === 'time') {
+          return (
+            <Text key={key} style={{ fontFamily: fonts.family.mono, color: lightColors.textSoft }}>
+              {seg.value}
+            </Text>
+          )
+        }
+        if (seg.kind === 'place' || seg.kind === 'em') {
+          return (
+            <Text
+              key={key}
+              style={{
+                fontFamily: fonts.family.voice,
+                fontStyle: 'italic',
+                color: lightColors.celadon,
+              }}
+            >
+              {seg.value}
+            </Text>
+          )
+        }
+        return <Text key={key}>{seg.value}</Text>
+      })}
+    </Text>
+  )
+}
+
 interface LetterBodyProps {
   stops: LLMRouteStop[]
   cityName: string
+  /** D39 v2.1 — LLM 응답. 있으면 paragraphs 사용 (marker parse). 없으면 client template fallback. */
+  llmLetter?: LLMLetter | null
 }
 
-function LetterBody({ stops, cityName }: LetterBodyProps) {
+function LetterBody({ stops, cityName, llmLetter }: LetterBodyProps) {
+  // LLM 응답이 있으면 그것 사용 (paragraphs 의 marker parse)
+  if (llmLetter && llmLetter.paragraphs.length > 0) {
+    return (
+      <>
+        {llmLetter.paragraphs.map((p, idx) => (
+          <LetterParagraph key={`llm-${idx}-${p.slice(0, 12)}`} text={p} />
+        ))}
+      </>
+    )
+  }
+  // fallback: client-side template (LLM loading / error 시)
   if (stops.length === 0) {
     return (
       <Text
@@ -197,9 +287,23 @@ function LetterBody({ stops, cityName }: LetterBodyProps) {
 
 export function LetterItinerary({ visible, onClose, trip, activeRoute }: LetterItineraryProps) {
   const insets = useSafeAreaInsets()
+  const router = useRouter()
   const translateY = useSharedValue(1000)
   const [internalVisible, setInternalVisible] = useState(false)
   const [selectedDay, setSelectedDay] = useState(0)
+  // D39 v2.1 — LLM letter cache per day index. loading/error 상태 함께.
+  const [lettersByDay, setLettersByDay] = useState<Record<number, LLMLetter>>({})
+  const [letterLoadingDay, setLetterLoadingDay] = useState<number | null>(null)
+  const fetchAbortRef = useRef<AbortController | null>(null)
+
+  const userStyle = useUserStyle(
+    useShallow((s) => ({
+      tags: s.tags,
+      likedPoiIds: s.likedPoiIds,
+      dislikedPoiIds: s.dislikedPoiIds,
+    })),
+  )
+  const appendTurn = useSession((s) => s.appendTurn)
 
   useEffect(() => {
     if (visible) {
@@ -238,6 +342,51 @@ export function LetterItinerary({ visible, onClose, trip, activeRoute }: LetterI
 
   const currentDay = dayGroups[selectedDay] ?? dayGroups[0]
 
+  // D39 v2.1 — selectedDay 변경 시 LLM letter 호출 (캐시 없으면). modal 닫혀있으면 skip.
+  useEffect(() => {
+    if (!visible || !currentDay) return
+    if (lettersByDay[currentDay.index]) return // 캐시 hit
+    if (letterLoadingDay === currentDay.index) return // 이미 로딩 중
+
+    fetchAbortRef.current?.abort()
+    const controller = new AbortController()
+    fetchAbortRef.current = controller
+    setLetterLoadingDay(currentDay.index)
+    void (async () => {
+      try {
+        let final: LLMLetter | undefined
+        for await (const ev of streamLetter({
+          city: trip.city,
+          dayIndex: currentDay.index + 1,
+          totalDays: dayCount,
+          stops: currentDay.stops,
+          dateLabel: ymdLabel(currentDay.date),
+          userStyle,
+        })) {
+          if (controller.signal.aborted) return
+          if (ev.final) {
+            final = ev.final
+            break
+          }
+        }
+        if (controller.signal.aborted) return
+        if (final) {
+          setLettersByDay((prev) => ({ ...prev, [currentDay.index]: final }))
+        }
+      } catch (err) {
+        if (controller.signal.aborted) return
+        // 친구 톤 — fallback 은 LetterBody 가 client template 으로 처리
+        console.warn('[letter-itinerary] streamLetter 실패:', err)
+      } finally {
+        if (!controller.signal.aborted) setLetterLoadingDay(null)
+      }
+    })()
+
+    return () => {
+      controller.abort()
+    }
+  }, [visible, currentDay, lettersByDay, letterLoadingDay, trip.city, dayCount, userStyle])
+
   // 현재 시각 — 잉크 타임라인의 active dot. trip 의 day index 안에 들어있을 때만 표시.
   const nowHour = new Date().getHours()
   const todayLocalDate = useMemo(() => {
@@ -252,6 +401,24 @@ export function LetterItinerary({ visible, onClose, trip, activeRoute }: LetterI
   const handleClose = useCallback(() => {
     onClose()
   }, [onClose])
+
+  // D39 v2.1 — 답장 쓰기: modal 닫고 채팅 탭 진입 + 안내 user turn append.
+  // 사용자가 "일정 바꾸고 싶어요" 발화한 것처럼 turn 박아 → 채팅에서 streamChat 이 응답 (자동 X — 사용자가 추가 메시지 입력 시).
+  const handleReply = useCallback(() => {
+    appendTurn({
+      ts: Date.now(),
+      speaker: 'user',
+      text: '일정 바꾸고 싶어요',
+    })
+    onClose()
+    // modal slide-down 후 navigate (race 회피 위해 짧은 delay)
+    setTimeout(() => {
+      router.push('/(tabs)/talk')
+    }, 320)
+  }, [appendTurn, onClose, router])
+
+  const currentLetter = currentDay ? (lettersByDay[currentDay.index] ?? null) : null
+  const isLetterLoading = currentDay ? letterLoadingDay === currentDay.index : false
 
   if (!internalVisible || !currentDay) return null
 
@@ -460,12 +627,25 @@ export function LetterItinerary({ visible, onClose, trip, activeRoute }: LetterI
               </View>
             </View>
 
-            {/* letter-body */}
+            {/* letter-body — D39 v2.1: LLM letter 우선, fallback client template */}
             <View style={{ marginBottom: spacing.lg }}>
-              <LetterBody stops={currentDay.stops} cityName={trip.city} />
+              <LetterBody stops={currentDay.stops} cityName={trip.city} llmLetter={currentLetter} />
+              {isLetterLoading && !currentLetter ? (
+                <Text
+                  style={{
+                    fontFamily: fonts.family.voice,
+                    fontSize: 12,
+                    fontStyle: 'italic',
+                    color: lightColors.textSoft,
+                    marginTop: spacing.xs + 2,
+                  }}
+                >
+                  — 한 호흡 더 다듬는 중이에요…
+                </Text>
+              ) : null}
             </View>
 
-            {/* signature */}
+            {/* signature — LLM 응답에 있으면 그것 사용, 없으면 default */}
             <Text
               style={{
                 fontFamily: fonts.family.voice,
@@ -475,26 +655,28 @@ export function LetterItinerary({ visible, onClose, trip, activeRoute }: LetterI
                 marginBottom: spacing.lg,
               }}
             >
-              — 오늘의 동행
+              {currentLetter?.signature ?? '— 오늘의 동행'}
             </Text>
 
-            {/* reply placeholder (v2.1) */}
+            {/* reply — D39 v2.1: 답장 쓰기 → 채팅 탭 진입 + 안내 turn append */}
             <Pressable
-              onPress={handleClose}
+              onPress={handleReply}
               accessibilityRole="button"
-              accessibilityLabel="답장 쓰기 (v2 예정)"
+              accessibilityLabel="답장 쓰기 · 일정 바꾸고 싶어요"
               hitSlop={6}
               style={({ pressed }) => ({
                 alignSelf: 'flex-start',
                 paddingVertical: spacing.sm,
-                opacity: pressed ? 0.7 : 0.85,
+                opacity: pressed ? 0.7 : 1,
               })}
             >
               <Text
                 style={{
                   fontFamily: fonts.family.voice,
                   fontSize: 12,
-                  color: lightColors.textMuted,
+                  fontStyle: 'italic',
+                  color: lightColors.celadon,
+                  textDecorationLine: 'underline',
                 }}
               >
                 ↳ 답장 쓰기 · 일정 바꾸고 싶어요

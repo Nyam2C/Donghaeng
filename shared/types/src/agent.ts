@@ -216,3 +216,28 @@ export const UpdateRouteInputSchema = z.object({
 })
 
 export type UpdateRouteInput = z.infer<typeof UpdateRouteInputSchema>
+
+// ---------------------------------------------------------------------------
+// 편지 일정 (POST /api/llm/letter) — D39 v2.1 SPECIAL · design-preview line 2074+
+// llm.ts: LLMLetter
+// ---------------------------------------------------------------------------
+
+export const LLMLetterSchema = z.object({
+  paragraphs: z.array(z.string().min(8).max(300)).min(2).max(6),
+  signature: z.string().min(2).max(20),
+})
+
+export const GenerateLetterInputSchema = z.object({
+  city: z.string().min(1),
+  /** day index (1-based) — design-preview 의 "Day 02" 같은 표시용 */
+  dayIndex: z.number().int().min(1).max(10),
+  /** day 전체 day 수 (1=당일, 3=2박3일 등) — paragraph 호흡 조정용 */
+  totalDays: z.number().int().min(1).max(10),
+  /** 해당 day 의 stops (이미 day-grouping 끝난 결과) */
+  stops: z.array(LLMRouteStopSchema).min(0).max(8),
+  /** "5월 14일 · 화요일" 같은 frontend 가 만들어준 표시 라벨 */
+  dateLabel: z.string().min(2).max(40),
+  userStyle: UserStyleSchema,
+})
+
+export type GenerateLetterInput = z.infer<typeof GenerateLetterInputSchema>

@@ -92,3 +92,17 @@ export interface LLMRouteUpdate {
   addedStopName?: string // 추가된 stop 의 이름 (사용자에게 표시)
   note: string // 친구 톤 멘트 (15-30자)
 }
+
+// D39 (v2.1) — ★ SPECIAL 편지 일정 LLM 생성. day 별 friend-tone 본문 paragraphs.
+// design-preview line 2074-2135 의 letter-body 직역 — 1인칭 명조 톤.
+// fallback: frontend client-side template 가 LLM 미설치/실패 시 사용 (loading state).
+export interface LLMLetter {
+  /** 각 paragraph 는 한 stop 또는 한 호흡. 2-6 paragraph 권장. inline marker:
+   *  - "{TIME:HH:MM}" → DM Mono 시간 표시
+   *  - "{PLACE:이름}"  → italic celadon 장소 표시 (점선 밑줄 v2.2 옵션)
+   *  - "{EM:강조어}"    → italic celadon 강조 ("조용한 책방" 같은 결)
+   * marker 없는 텍스트는 Noto Serif KR body. frontend 가 parse 해서 segment 별 스타일. */
+  paragraphs: string[]
+  /** 서명 — design-preview "— 오늘의 동행" default. LLM 이 다른 호흡 선택 가능 ("— 동행"). */
+  signature: string
+}

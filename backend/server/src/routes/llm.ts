@@ -6,6 +6,7 @@
 import { Hono } from 'hono'
 import { streamSSE } from 'hono/streaming'
 import { chatConversation } from '../../llm/functions/chat-conversation'
+import { generateLetter } from '../../llm/functions/generate-letter'
 import { intentExtract } from '../../llm/functions/intent-extract'
 import { recommendCities } from '../../llm/functions/recommend-cities'
 import { recommendPois } from '../../llm/functions/recommend-pois'
@@ -326,6 +327,50 @@ llmRoutes.post('/route-update', async (c) => {
       const fallback = {
         route: null,
         note: '음, 잠깐만요. 동선을 다시 살피고 있어요.',
+      }
+      await stream.writeSSE({ event: 'final', data: JSON.stringify(fallback) })
+      await stream.writeSSE({
+        event: 'done',
+        data: JSON.stringify({ hallucinationDetected: false }),
+      })
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// POST /api/llm/letter — D39 v2.1 SPECIAL 편지 일정
+// design-preview line 2074-2135 의 letter-body 톤. day stops → friend-tone paragraphs.
+// ---------------------------------------------------------------------------
+llmRoutes.post('/letter', async (c) => {
+  let raw: unknown
+  try {
+    raw = await c.req.json()
+  } catch {
+    return c.json({ error: 'invalid JSON body' }, 400)
+  }
+
+  return streamSSE(c, async (stream) => {
+    const dayIndex =
+      raw && typeof raw === 'object' && raw !== null && 'dayIndex' in raw
+        ? (raw as { dayIndex?: unknown }).dayIndex
+        : null
+    await stream.writeSSE({
+      event: 'start',
+      data: JSON.stringify({ phase: 'letter', dayIndex }),
+    })
+
+    try {
+      const { result, hallucinationDetected, trace } = await generateLetter(
+        raw as Parameters<typeof generateLetter>[0],
+      )
+      await stream.writeSSE({ event: 'raw', data: JSON.stringify({ trace }) })
+      await stream.writeSSE({ event: 'final', data: JSON.stringify(result) })
+      await stream.writeSSE({ event: 'done', data: JSON.stringify({ hallucinationDetected }) })
+    } catch (err) {
+      console.warn('[llm/letter] generateLetter threw', err)
+      const fallback = {
+        paragraphs: ['편지를 다시 적어볼게요. 잠깐만요.'],
+        signature: '— 오늘의 동행',
       }
       await stream.writeSSE({ event: 'final', data: JSON.stringify(fallback) })
       await stream.writeSSE({

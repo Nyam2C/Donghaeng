@@ -52,9 +52,8 @@ const EMPTY_VOICE = '동행이 곧 인사할게요.'
 const SEND_FAIL_FALLBACK = '음, 잠깐만요. 다시 한번 말해줄래요?'
 const INPUT_PLACEHOLDER = '계속 적기…'
 
-// design-preview --line-strong (rgba(31,31,31,0.15)) — theme 토큰 부재라 inline 정의
-// (poi-curation.tsx 의 gradient inline 패턴과 동일 — DESIGN.md 출처 hex 허용 룰)
-const LINE_STRONG = 'rgba(31, 31, 31, 0.15)'
+// design-preview --line-strong — D39 P3 polish 에서 theme 토큰 (lightColors.lineStrong) 으로 이동
+const LINE_STRONG = lightColors.lineStrong
 
 /** ts(ms) → "HH:MM" (24h, 0-pad). DM Mono 데이터 라벨 용. */
 function formatHHMM(ts: number): string {
