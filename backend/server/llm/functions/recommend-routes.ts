@@ -20,10 +20,12 @@ import { LLMRouteListSchema, RecommendRoutesInputSchema } from '../schemas'
 // 실제 LLM 응답이 우선이지만 mock 으로도 letter modal 동작 검증 가능.
 const MOCK_TIME_HINTS = ['09:30', '11:30', '13:00', '15:30', '18:30', '20:30'] as const
 
-// QA fix (ISSUE-002) — name 이 LLM 응답 누락 또는 mock 케이스 둘 다 placeholder 회피.
-// poi_id 가 kakao_* 같은 internal id 면 generic "어느 곳" 대신 "장소 N" 표시.
-// poi_id 가 한글로 시작하면 (예: "정동진" — update-route mock 이 박는 케이스) 그대로 사용.
-function stopName(poiId: string, order: number): string {
+// D40 (v1.8) + QA fix (ISSUE-002) — stop.name 채움 우선순위:
+//   1. poiNames[poi_id] (frontend 가 LLMTripPoiList 의 진짜 이름 전달 — "안목 해변")
+//   2. poi_id 가 한글로 시작 (update-route mock 의 "정동진" 케이스)
+//   3. fallback "장소 N"
+function stopName(poiId: string, order: number, poiNames?: Record<string, string>): string {
+  if (poiNames?.[poiId]) return poiNames[poiId]
   if (/^[가-힣]/.test(poiId)) return poiId
   return `장소 ${order}`
 }
@@ -31,12 +33,13 @@ function stopName(poiId: string, order: number): string {
 function pickStops(
   ids: string[],
   count: number,
+  poiNames?: Record<string, string>,
 ): Array<{ poi_id: string; order: number; name: string; timeHint: string }> {
   const clamped = Math.max(3, Math.min(count, ids.length, 6))
   return ids.slice(0, clamped).map((poi_id, i) => ({
     poi_id,
     order: i + 1,
-    name: stopName(poi_id, i + 1),
+    name: stopName(poi_id, i + 1, poiNames),
     timeHint: MOCK_TIME_HINTS[i] ?? '12:00',
   }))
 }
@@ -44,6 +47,7 @@ function pickStops(
 function pickStopsReversed(
   ids: string[],
   count: number,
+  poiNames?: Record<string, string>,
 ): Array<{ poi_id: string; order: number; name: string; timeHint: string }> {
   const clamped = Math.max(3, Math.min(count, ids.length, 6))
   return ids
@@ -52,19 +56,21 @@ function pickStopsReversed(
     .map((poi_id, i) => ({
       poi_id,
       order: i + 1,
-      name: stopName(poi_id, i + 1),
+      name: stopName(poi_id, i + 1, poiNames),
       timeHint: MOCK_TIME_HINTS[i] ?? '12:00',
     }))
 }
 
 function mockRoutes(input: RecommendRoutesInput): LLMRouteList {
   const liked = input.likedPoiIds
+  // D40 (v1.8) — poiNames 옵셔널이 있으면 mock 도 진짜 POI 이름으로 name 채움.
+  const names = input.poiNames
   // A: 5개 (또는 가능한 만큼) head 순서대로
-  const aStops = pickStops(liked, 5)
+  const aStops = pickStops(liked, 5, names)
   // B: 5개 (또는 가능한 만큼) 역순 — 다른 결
-  const bStops = pickStopsReversed(liked, 5)
+  const bStops = pickStopsReversed(liked, 5, names)
   // C: 3개 — 한 곳 깊게 (적게)
-  const cStops = pickStops(liked, 3)
+  const cStops = pickStops(liked, 3, names)
 
   const routes: LLMRoute[] = [
     {
@@ -108,7 +114,14 @@ function mockRoutes(input: RecommendRoutesInput): LLMRouteList {
 
 function buildUserPrompt(input: RecommendRoutesInput): string {
   const tagsLine = input.userStyle.tags.length > 0 ? input.userStyle.tags.join(', ') : '(없음)'
-  const likedLines = input.likedPoiIds.map((id) => `- ${id}`).join('\n')
+  // D40 (v1.8) — poiNames 있으면 id → "이름" 으로 표시해 LLM 이 stop.name 에 진짜 이름 박도록.
+  const names = input.poiNames
+  const likedLines = input.likedPoiIds
+    .map((id) => {
+      const friendly = names?.[id]
+      return friendly ? `- ${id}  (이름: ${friendly})` : `- ${id}`
+    })
+    .join('\n')
 
   return `[도시]
 ${input.city}
