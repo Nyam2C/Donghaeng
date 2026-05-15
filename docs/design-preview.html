@@ -2338,6 +2338,82 @@ footer {
     <p class="caption"><strong>★ v1.5 · 온보딩 (D36)</strong>앱 첫 진입. <strong style="color:var(--celadon)">탭바 없음</strong> — 권한 결정 후 홈 진입. 마이크 권한 X (D32 채팅 first). 친구 톤 voice "옆에서 같이 짜볼게요" 명조. "선택"이라는 약속 표현 — 강제 X.</p>
   </div>
 
+  <!-- 02.4. DATE PICKER (출발일 + 박수) -->
+  <div class="phone">
+    <div class="phone-num">★ v1.5 · SCENARIO 02.4</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="status-bar"><span>9:31</span><span class="icons">●●● ▮ 89</span></div>
+        <div class="screen-content">
+          <div class="greet" style="margin-top:10px">
+            <span class="companion" style="color:var(--celadon)"><svg><use href="#ink-mark"/></svg></span>
+            <span class="greet-name">강릉 · 며칠 머물래요?</span>
+          </div>
+          <p class="voice sm"><em>언제</em>, <em>몇 박</em>으로?</p>
+
+          <!-- 출발일 horizontal scroll calendar -->
+          <div style="font-family:'Pretendard Variable',sans-serif; font-size:11px; color:var(--text-muted); letter-spacing:0.08em; text-transform:uppercase; margin:18px 0 10px">출발일</div>
+          <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin:0 -20px 18px; padding-left:20px; padding-right:20px">
+            <div style="flex-shrink:0; width:56px; padding:12px 6px; border:1px solid var(--line); border-radius:12px; background:var(--bg); text-align:center">
+              <div style="font-family:'DM Mono',monospace; font-size:9px; color:var(--text-soft); letter-spacing:0.04em; margin-bottom:2px">월</div>
+              <div style="font-family:'Fraunces',serif; font-style:italic; font-size:18px; color:var(--text); margin-bottom:2px">13</div>
+              <div style="font-family:'Noto Serif KR',serif; font-size:11px; color:var(--text-muted)">5월</div>
+            </div>
+            <div style="flex-shrink:0; width:56px; padding:12px 6px; border:1.5px solid var(--celadon); border-radius:12px; background:var(--celadon-tint); text-align:center">
+              <div style="font-family:'DM Mono',monospace; font-size:9px; color:var(--text-soft); letter-spacing:0.04em; margin-bottom:2px">화</div>
+              <div style="font-family:'Fraunces',serif; font-style:italic; font-size:18px; color:var(--celadon); margin-bottom:2px">14</div>
+              <div style="font-family:'Noto Serif KR',serif; font-size:11px; color:var(--celadon)">5월</div>
+            </div>
+            <div style="flex-shrink:0; width:56px; padding:12px 6px; border:1px solid var(--line); border-radius:12px; background:var(--bg); text-align:center">
+              <div style="font-family:'DM Mono',monospace; font-size:9px; color:var(--text-soft); letter-spacing:0.04em; margin-bottom:2px">수</div>
+              <div style="font-family:'Fraunces',serif; font-style:italic; font-size:18px; color:var(--text); margin-bottom:2px">15</div>
+              <div style="font-family:'Noto Serif KR',serif; font-size:11px; color:var(--text-muted)">5월</div>
+            </div>
+            <div style="flex-shrink:0; width:56px; padding:12px 6px; border:1px solid var(--line); border-radius:12px; background:var(--bg); text-align:center">
+              <div style="font-family:'DM Mono',monospace; font-size:9px; color:var(--text-soft); letter-spacing:0.04em; margin-bottom:2px">목</div>
+              <div style="font-family:'Fraunces',serif; font-style:italic; font-size:18px; color:var(--text); margin-bottom:2px">16</div>
+              <div style="font-family:'Noto Serif KR',serif; font-size:11px; color:var(--text-muted)">5월</div>
+            </div>
+            <div style="flex-shrink:0; width:56px; padding:12px 6px; border:1px solid var(--line); border-radius:12px; background:var(--bg); text-align:center">
+              <div style="font-family:'DM Mono',monospace; font-size:9px; color:var(--text-soft); letter-spacing:0.04em; margin-bottom:2px">금</div>
+              <div style="font-family:'Fraunces',serif; font-style:italic; font-size:18px; color:var(--text); margin-bottom:2px">17</div>
+              <div style="font-family:'Noto Serif KR',serif; font-size:11px; color:var(--text-muted)">5월</div>
+            </div>
+            <div style="flex-shrink:0; width:56px; padding:12px 6px; border:1px solid var(--line); border-radius:12px; background:var(--bg); text-align:center; opacity:0.6">
+              <div style="font-family:'DM Mono',monospace; font-size:9px; color:var(--text-soft); letter-spacing:0.04em; margin-bottom:2px">토</div>
+              <div style="font-family:'Fraunces',serif; font-style:italic; font-size:18px; color:var(--text); margin-bottom:2px">18</div>
+              <div style="font-family:'Noto Serif KR',serif; font-size:11px; color:var(--text-muted)">5월</div>
+            </div>
+          </div>
+
+          <!-- 박수 chip row -->
+          <div style="font-family:'Pretendard Variable',sans-serif; font-size:11px; color:var(--text-muted); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:10px">며칠</div>
+          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:18px">
+            <div class="tag">당일</div>
+            <div class="tag">1박 2일</div>
+            <div class="tag on">2박 3일</div>
+            <div class="tag">3박 4일</div>
+            <div class="tag">4박 5일</div>
+          </div>
+
+          <!-- 미리보기 — 친구 톤 한 줄 -->
+          <div style="padding:14px; background:var(--celadon-tint); border-radius:12px; margin-bottom:20px">
+            <div style="font-family:'Noto Serif KR',serif; font-size:13px; line-height:1.55; color:var(--text)">5월 14일 (화) ~ 5월 16일 (목) · 2박 3일</div>
+          </div>
+
+          <div style="padding:14px 22px; background:var(--celadon); color:var(--bg-elev); border-radius:14px; font-family:'Noto Serif KR',serif; font-size:15px; font-weight:500; text-align:center">이렇게 가요</div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab"><div class="tab-dot"></div>홈</div>
+          <div class="tab active"><div class="tab-dot"></div>여행</div>
+          <div class="tab"><div class="tab-dot"></div>대화</div>
+          <div class="tab"><div class="tab-dot"></div>나</div>
+        </div>
+      </div>
+    </div>
+    <p class="caption"><strong>★ v1.5 · SCENARIO 02.4 — DATE PICKER (D35)</strong>TRIP START 도시 선택 후, SCENARIO 02.5 진입 전 신규 단계. 출발일 horizontal scroll (오늘 ~ +30일) + 박수 chip 5개. <strong style="color:var(--celadon)">chip 과 분위기 카드 두 경로 모두 이 화면 거쳐 일관성 확보.</strong> 사용자가 *몇 박 며칠* 직접 결정.</p>
+  </div>
+
   <!-- 02.5. 날짜 + 일자별 날씨 -->
   <div class="phone">
     <div class="phone-num">★ v1.5 · SCENARIO 02.5</div>

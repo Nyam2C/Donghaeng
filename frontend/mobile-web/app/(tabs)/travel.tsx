@@ -1,6 +1,7 @@
 import { View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { DatePicker } from '@/components/date-picker'
 import { DateWeather } from '@/components/date-weather'
 import { PoiCuration } from '@/components/poi-curation'
 import { RouteSelect } from '@/components/route-select'
@@ -12,17 +13,18 @@ import { spacing } from '@/theme/spacing'
 import Companion from '../companion'
 
 /**
- * 여행 탭 = 5 모드 state machine (D27 + D33).
+ * 여행 탭 = 6 모드 state machine (D27 + D33 + D35).
  *
  * 분기:
- *  (1) active === null            → <TripStart />            (★ TRIP START)
- *  (2) active && step === 'dates' → <DateWeather />          (SCENARIO 02.5 · D33)
- *  (3) active && step === 'pois' (또는 undefined) → <PoiCuration /> (SCENARIO 03)
- *  (4) active && step === 'routes'→ <RouteSelect />          (SCENARIO 04)
- *  (5) active && step === 'on_trip'→ <Companion /> (Phase 4c)
+ *  (1) active === null                  → <TripStart />     (★ TRIP START)
+ *  (2) active && step === 'date_picker' → <DatePicker />    (SCENARIO 02.4 · D35)
+ *  (3) active && step === 'dates'       → <DateWeather />   (SCENARIO 02.5 · D33)
+ *  (4) active && step === 'pois' (또는 undefined) → <PoiCuration /> (SCENARIO 03)
+ *  (5) active && step === 'routes'      → <RouteSelect />   (SCENARIO 04)
+ *  (6) active && step === 'on_trip'     → <Companion />     (Phase 4c)
  *
- * step undefined 는 'pois' 로 default (legacy caller 호환). TRIP START 의 chip 은 'dates' 로
- * 진입 (D33). SCENARIO 02.5 "이렇게 가요" → setPlanningStep('pois') → SCENARIO 03 진입.
+ * step undefined 는 'pois' 로 default (legacy caller 호환). TRIP START 의 chip + 분위기 카드
+ * 모두 'date_picker' 로 진입 (D35). DATE PICKER "이렇게 가요" → 'dates' (SCENARIO 02.5).
  *
  * D27 의 mode router 가 가벼운 분기만 담당. companion.tsx 등 기존 산출물 변경 0.
  */
@@ -46,6 +48,20 @@ export default function Travel() {
   }
 
   const step = active.planning_step ?? 'pois'
+
+  if (step === 'date_picker') {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: lightColors.bgElev,
+          paddingTop: insets.top + spacing.sm,
+        }}
+      >
+        <DatePicker trip={active} />
+      </View>
+    )
+  }
 
   if (step === 'dates') {
     return (

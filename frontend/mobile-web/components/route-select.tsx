@@ -104,6 +104,7 @@ export function RouteSelect({ trip }: RouteSelectProps) {
     })),
   )
   const setPlanningStep = useTrip((s) => s.setPlanningStep)
+  const setActiveRoute = useTrip((s) => s.setActiveRoute)
 
   const [state, setState] = useState<RouteSelectState>({ status: 'loading' })
   // design-preview line 1753 의 .route-card.selected 가 Plan A —
@@ -160,18 +161,21 @@ export function RouteSelect({ trip }: RouteSelectProps) {
     setSelectedLetter(letter)
   }, [])
 
-  const handleStart = useCallback(() => {
-    setPlanningStep('on_trip')
-  }, [setPlanningStep])
-
-  const handleBackToPois = useCallback(() => {
-    setPlanningStep('pois')
-  }, [setPlanningStep])
-
   const selectedRoute: LLMRoute | null =
     state.status === 'ready'
       ? (state.data.routes.find((r) => r.letter === selectedLetter) ?? null)
       : null
+
+  const handleStart = useCallback(() => {
+    // D34 — 선택된 동선을 store 에 박아 채팅 SCENARIO 08 (add_poi intent) 가 받을 수 있게.
+    // 누락 시 채팅 add_poi → "이대로" 버튼 비활성 → v1.5 핵심 흐름 끊김.
+    if (selectedRoute) setActiveRoute(selectedRoute)
+    setPlanningStep('on_trip')
+  }, [setPlanningStep, setActiveRoute, selectedRoute])
+
+  const handleBackToPois = useCallback(() => {
+    setPlanningStep('pois')
+  }, [setPlanningStep])
 
   return (
     <ScrollView

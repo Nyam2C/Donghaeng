@@ -149,7 +149,7 @@ export const ChatTripContextSchema = z.object({
   city: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
-  planningStep: z.enum(['dates', 'pois', 'routes', 'on_trip']).optional(),
+  planningStep: z.enum(['date_picker', 'dates', 'pois', 'routes', 'on_trip']).optional(),
 })
 
 export const ChatConversationInputSchema = z.object({
