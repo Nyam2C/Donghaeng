@@ -103,6 +103,12 @@ export type RecommendTripPoisInput = z.infer<typeof RecommendTripPoisInputSchema
 export const LLMRouteStopSchema = z.object({
   poi_id: z.string().min(1),
   order: z.number().int().min(1).max(20),
+  // D38 — 편지 일정 (SPECIAL v1.6) 옵셔널 보강. 기존 caller 0 영향.
+  name: z.string().min(1).max(40).optional(),
+  timeHint: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'HH:MM')
+    .optional(),
 })
 
 export const LLMRouteSchema = z.object({

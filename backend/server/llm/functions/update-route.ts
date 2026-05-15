@@ -54,6 +54,14 @@ travelMin=${input.currentRoute.travelMin}, moodStars=${input.currentRoute.moodSt
 // Mock fallback — 시드 없이 결정적. 사용자 발화에서 장소명 추출 후 끝에 추가.
 // ---------------------------------------------------------------------------
 
+/** "HH:MM" 에 시간 더해서 "HH:MM" 반환 (24시간 wrap). 1자리 수도 2자리로 pad. */
+function addHours(hhmm: string, hours: number): string {
+  const [h, m] = hhmm.split(':').map(Number)
+  if (Number.isNaN(h) || Number.isNaN(m)) return hhmm
+  const newH = (h + hours) % 24
+  return `${String(newH).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
 /** "정동진도 가고 싶어" → "정동진". 조사 제거. */
 function extractAddedName(addRequest: string): string {
   const withParticle = addRequest.match(/([가-힣A-Za-z]{2,12})(?:도|를|을|에|이|은)/)
@@ -65,7 +73,22 @@ function extractAddedName(addRequest: string): string {
 function mockUpdate(input: UpdateRouteInput): LLMRouteUpdate {
   const addedName = extractAddedName(input.addRequest)
   const maxOrder = input.currentRoute.stops.reduce((m, s) => Math.max(m, s.order), 0)
-  const newStops = [...input.currentRoute.stops, { poi_id: addedName, order: maxOrder + 1 }]
+  // D38 — 추가된 stop 에도 timeHint + name 채움 (편지 일정 SPECIAL v1.6).
+  // 시간은 기존 마지막 timeHint 뒤 2시간 (간단 heuristic).
+  const lastTime = [...input.currentRoute.stops]
+    .sort((a, b) => a.order - b.order)
+    .reverse()
+    .find((s) => s.timeHint)?.timeHint
+  const newTimeHint = lastTime ? addHours(lastTime, 2) : '17:00'
+  const newStops = [
+    ...input.currentRoute.stops,
+    {
+      poi_id: addedName,
+      order: maxOrder + 1,
+      name: addedName,
+      timeHint: newTimeHint,
+    },
+  ]
 
   // travelMin +30 (clamp 720)
   const newTravelMin = Math.min(720, input.currentRoute.travelMin + 30)

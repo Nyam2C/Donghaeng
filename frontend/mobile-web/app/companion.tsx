@@ -8,6 +8,7 @@ import type { GpsCoord, KakaoPOI, MomentCard as MomentCardType } from '@trip/typ
 import { InkMark } from '@/components/ink-mark'
 import { MomentCard } from '@/components/moment-card'
 import { CompanionMap } from '@/modals/companion-map'
+import { LetterItinerary } from '@/modals/letter-itinerary'
 import { apiFetch } from '@/services/api-client'
 import { resolveNextCard } from '@/services/companion/card-resolver'
 import { streamRecommendation } from '@/services/companion/llm-orchestrator'
@@ -15,6 +16,7 @@ import { useCompanionActions } from '@/services/companion/state'
 import { getCurrentGps } from '@/services/location'
 import { nearbyPois } from '@/services/poi'
 import { useSession } from '@/stores/session'
+import { useTrip } from '@/stores/trip'
 import { useUserStyle } from '@/stores/user-style'
 import { lightColors } from '@/theme'
 import * as fonts from '@/theme/fonts'
@@ -96,9 +98,13 @@ export default function Companion() {
   const alertQueue = useSession((s) => s.alertQueue)
   const glow = useSession((s) => s.glow)
   const { pushAlert, acknowledgeAlert, setGlow } = useCompanionActions()
+  // D38 — 편지 일정 SPECIAL 진입점. activeRoute 있을 때만 [편지로 보기] 렌더.
+  const activeTrip = useTrip((s) => s.active)
+  const activeRoute = useTrip((s) => s.activeRoute)
 
   const [state, setState] = useState<CompanionState>({ status: 'loading' })
   const [mapOpen, setMapOpen] = useState(false)
+  const [letterOpen, setLetterOpen] = useState(false)
   const poiCacheRef = useRef<PoiCacheEntry | null>(null)
 
   /**
@@ -269,6 +275,15 @@ export default function Companion() {
     setMapOpen(false)
   }, [])
 
+  const onLetterPress = useCallback(() => {
+    // D38 — SPECIAL 편지 일정 modal slide-up
+    setLetterOpen(true)
+  }, [])
+
+  const onLetterClose = useCallback(() => {
+    setLetterOpen(false)
+  }, [])
+
   return (
     <View
       style={{
@@ -365,8 +380,53 @@ export default function Companion() {
         ) : null}
       </ScrollView>
 
+      {/* D38 — SPECIAL 편지 일정 진입점. activeRoute + activeTrip 있을 때만 렌더. */}
+      {activeTrip && activeRoute ? (
+        <View
+          style={{
+            position: 'absolute',
+            right: spacing.lg,
+            bottom: insets.bottom + spacing.md,
+          }}
+        >
+          <Pressable
+            onPress={onLetterPress}
+            accessibilityRole="button"
+            accessibilityLabel="편지로 보기"
+            hitSlop={8}
+            style={({ pressed }) => ({
+              paddingVertical: spacing.xs + 2,
+              paddingHorizontal: spacing.sm,
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Text
+              style={{
+                fontFamily: fonts.family.voice,
+                fontSize: 12,
+                fontStyle: 'italic',
+                color: lightColors.celadon,
+                textDecorationLine: 'underline',
+              }}
+            >
+              ↳ 편지로 보기
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
+
       {/* Phase 4d 지도 모달 — slide-up 풀스크린 */}
       <CompanionMap visible={mapOpen} onClose={onMapClose} />
+
+      {/* v1.6 (D38) 편지 일정 SPECIAL — slide-up 풀스크린 */}
+      {activeTrip && activeRoute ? (
+        <LetterItinerary
+          visible={letterOpen}
+          onClose={onLetterClose}
+          trip={activeTrip}
+          activeRoute={activeRoute}
+        />
+      ) : null}
     </View>
   )
 }
