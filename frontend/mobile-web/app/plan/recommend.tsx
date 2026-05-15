@@ -260,8 +260,8 @@ export default function PlanRecommend() {
 
   const handleSelectCity = useCallback(
     (city: RecommendedCity) => {
-      // D28 — 도시 선택 시 SCENARIO 03 POI 큐레이션 직접 진입
-      // 일자는 default 2박 3일 (Phase 4b' 에서 사용자 조정 추가 예정)
+      // D35 — 도시 선택 시 SCENARIO 02.4 (DATE PICKER) 진입. 분위기 카드 / chip 두 경로 일관성.
+      // default 2박 3일 prefill (DatePicker 가 사용자 조정 받음 → 02.5 → 03).
       const today = new Date().toISOString().slice(0, 10)
       const endDate = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10)
       startTrip({
@@ -269,7 +269,7 @@ export default function PlanRecommend() {
         startDate: today,
         endDate,
         vibeTags: tags,
-        planning_step: 'pois',
+        planning_step: 'date_picker',
       })
       router.push('/(tabs)/travel')
     },

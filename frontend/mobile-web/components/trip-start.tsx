@@ -11,16 +11,19 @@ import * as fonts from '@/theme/fonts'
 import { radius, spacing } from '@/theme/spacing'
 
 /**
- * ★ v1 · TRIP START — design-preview line 1814-1890 정확 매핑 (D28 + D33).
+ * ★ v1 · TRIP START — design-preview line 1814-1890 정확 매핑 (D28 + D33 + D35).
  *
  * 3 경로 동시 제공:
- *  (1) 도시 검색 input + 인기 8 chip → startTrip({city, planning_step:'dates'}) (D33 SCENARIO 02.5 진입)
- *  (2) 분위기 4 카드 → setTags([mappedTag]) + push('/plan/recommend') (SCENARIO 02 직접)
+ *  (1) 도시 검색 input + 인기 8 chip → startTrip({city, planning_step:'date_picker'}) (D35 SCENARIO 02.4 진입)
+ *  (2) 분위기 4 카드 → setTags([mappedTag]) + push('/plan/recommend') (SCENARIO 02 → DATE PICKER 연결)
  *  (3) 하단 dashed companion 진입점 → push('/plan/new') (SCENARIO 01)
  *
- * D33: chip flow 의 다음 단계는 SCENARIO 03 (pois) 가 아니라 SCENARIO 02.5 (날짜+날씨) 로
- * 진입. mode router 가 step='dates' 분기로 <DateWeather /> 렌더 → "이렇게 가요" 누르면
- * setPlanningStep('pois') → SCENARIO 03.
+ * D35: chip flow 의 다음 단계는 SCENARIO 02.5 (dates) 가 아니라 SCENARIO 02.4 (date_picker) 로
+ * 진입. 사용자가 출발일+박수 결정 → DatePicker "이렇게 가요" → setPlanningStep('dates') →
+ * SCENARIO 02.5 (일자별 날씨) → "이렇게 가요" → setPlanningStep('pois') → SCENARIO 03.
+ *
+ * 분위기 4 카드도 plan/recommend 의 도시 선택 → planning_step:'date_picker' 로 진입하므로
+ * 두 경로 모두 일관되게 DATE PICKER 거침.
  *
  * scaffold-freeze D30 명시적 예외. 신규 컴포넌트 1개.
  */
@@ -55,8 +58,9 @@ export function TripStart() {
   const setTags = useUserStyle((s) => s.setTags)
   const [search, setSearch] = useState('')
 
-  // D33 — chip / search 진입 시 SCENARIO 02.5 (날짜+날씨) 로. 2박 3일 default.
-  const enterDateWeather = useCallback(
+  // D35 — chip / search 진입 시 SCENARIO 02.4 (DATE PICKER) 로. 2박 3일 default 박힘
+  // (DatePicker 가 trip.startDate/endDate 받아 선택 prefill). 사용자가 박수 변경 가능.
+  const enterDatePicker = useCallback(
     (city: string) => {
       const trimmed = city.trim()
       if (trimmed.length === 0) return
@@ -65,7 +69,7 @@ export function TripStart() {
         startDate: todayISO(),
         endDate: isoPlusDays(2),
         vibeTags: [],
-        planning_step: 'dates',
+        planning_step: 'date_picker',
       })
     },
     [startTrip],
@@ -84,9 +88,9 @@ export function TripStart() {
   }, [router])
 
   const handleSearchSubmit = useCallback(() => {
-    enterDateWeather(search)
+    enterDatePicker(search)
     setSearch('')
-  }, [search, enterDateWeather])
+  }, [search, enterDatePicker])
 
   return (
     <ScrollView
@@ -212,7 +216,7 @@ export function TripStart() {
         }}
       >
         {POPULAR_CITIES.map((city) => (
-          <TagChip key={city} label={city} onPress={() => enterDateWeather(city)} />
+          <TagChip key={city} label={city} onPress={() => enterDatePicker(city)} />
         ))}
       </View>
 

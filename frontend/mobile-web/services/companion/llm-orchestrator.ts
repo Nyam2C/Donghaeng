@@ -11,6 +11,7 @@ import type {
   LLMRouteStop,
   LLMRouteUpdate,
   LLMTripPoiList,
+  TripPlanningStep,
   TripPoiCandidate,
   Turn,
   UserStyle,
@@ -508,7 +509,7 @@ export interface ChatOrchestratorInput {
     city?: string
     startDate?: string
     endDate?: string
-    planningStep?: 'dates' | 'pois' | 'routes' | 'on_trip'
+    planningStep?: TripPlanningStep
   }
 }
 
@@ -602,7 +603,7 @@ export interface IntentOrchestratorInput {
     city?: string
     startDate?: string
     endDate?: string
-    planningStep?: 'dates' | 'pois' | 'routes' | 'on_trip'
+    planningStep?: TripPlanningStep
   }
 }
 
