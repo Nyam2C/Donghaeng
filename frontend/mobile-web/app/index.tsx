@@ -1,5 +1,4 @@
-import { router } from 'expo-router'
-import { useEffect } from 'react'
+import { Redirect, router } from 'expo-router'
 import { Pressable, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Svg, { Circle, Path } from 'react-native-svg'
@@ -151,18 +150,14 @@ export default function Onboarding() {
   const onboarded = useSession((s) => s.onboarded)
   const setOnboarded = useSession((s) => s.setOnboarded)
 
-  // 재실행 시 onboarded=true 면 즉시 home redirect (AsyncStorage rehydrate 후 동작)
-  useEffect(() => {
-    if (onboarded === true) {
-      router.replace('/(tabs)/home')
-    }
-  }, [onboarded])
-
-  // redirect 진행 중 — 빈 view (깜빡임 회피)
-  if (onboarded === true) return null
+  // 재실행 시 onboarded=true 면 즉시 home redirect — `<Redirect />` 는 declarative 라서
+  // Root Layout mount 완료 후 navigation tree ready 상태에서만 실행됨. useEffect + router.replace
+  // 는 mount 직후 race ("Attempted to navigate before mounting the Root Layout") 발생 가능.
+  if (onboarded === true) return <Redirect href="/(tabs)/home" />
 
   const handleStart = () => {
     setOnboarded(true)
+    // 사용자 click 이후 호출 — mount 끝난 상태라 imperative router.replace 안전.
     router.replace('/(tabs)/home')
   }
 
