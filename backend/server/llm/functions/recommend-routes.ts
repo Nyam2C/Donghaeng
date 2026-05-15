@@ -20,14 +20,23 @@ import { LLMRouteListSchema, RecommendRoutesInputSchema } from '../schemas'
 // 실제 LLM 응답이 우선이지만 mock 으로도 letter modal 동작 검증 가능.
 const MOCK_TIME_HINTS = ['09:30', '11:30', '13:00', '15:30', '18:30', '20:30'] as const
 
+// QA fix (ISSUE-002) — name 이 LLM 응답 누락 또는 mock 케이스 둘 다 placeholder 회피.
+// poi_id 가 kakao_* 같은 internal id 면 generic "어느 곳" 대신 "장소 N" 표시.
+// poi_id 가 한글로 시작하면 (예: "정동진" — update-route mock 이 박는 케이스) 그대로 사용.
+function stopName(poiId: string, order: number): string {
+  if (/^[가-힣]/.test(poiId)) return poiId
+  return `장소 ${order}`
+}
+
 function pickStops(
   ids: string[],
   count: number,
-): Array<{ poi_id: string; order: number; timeHint: string }> {
+): Array<{ poi_id: string; order: number; name: string; timeHint: string }> {
   const clamped = Math.max(3, Math.min(count, ids.length, 6))
   return ids.slice(0, clamped).map((poi_id, i) => ({
     poi_id,
     order: i + 1,
+    name: stopName(poi_id, i + 1),
     timeHint: MOCK_TIME_HINTS[i] ?? '12:00',
   }))
 }
@@ -35,12 +44,17 @@ function pickStops(
 function pickStopsReversed(
   ids: string[],
   count: number,
-): Array<{ poi_id: string; order: number; timeHint: string }> {
+): Array<{ poi_id: string; order: number; name: string; timeHint: string }> {
   const clamped = Math.max(3, Math.min(count, ids.length, 6))
   return ids
     .slice(0, clamped)
     .reverse()
-    .map((poi_id, i) => ({ poi_id, order: i + 1, timeHint: MOCK_TIME_HINTS[i] ?? '12:00' }))
+    .map((poi_id, i) => ({
+      poi_id,
+      order: i + 1,
+      name: stopName(poi_id, i + 1),
+      timeHint: MOCK_TIME_HINTS[i] ?? '12:00',
+    }))
 }
 
 function mockRoutes(input: RecommendRoutesInput): LLMRouteList {

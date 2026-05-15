@@ -89,12 +89,13 @@ function hourOf(timeHint: string | undefined): number {
   return m ? Number(m[1]) : 12
 }
 
-/** stop 의 표시 이름 — name? 우선, fallback poi_id 끝 segment. */
+/** stop 의 표시 이름 — name? 우선, 한글 poi_id, generic placeholder (order 기반). */
 function displayName(stop: LLMRouteStop): string {
   if (stop.name && stop.name.length > 0) return stop.name
-  // "kakao_12345" → "장소" placeholder. id 가 한글이면 그대로 사용 (update-route mock 케이스).
+  // "kakao_12345" → placeholder 우선순위 fallback. update-route mock 케이스의 한글 poi_id 도 처리.
   if (/^[가-힣]/.test(stop.poi_id)) return stop.poi_id
-  return '한 곳'
+  // QA fix (ISSUE-002) — "한 곳" 일괄 표시 회피. order 기반 자리 라벨.
+  return `${stop.order}번째 자리`
 }
 
 /** stop 의 표시 시각 — timeHint? 우선, fallback order 기반. */
