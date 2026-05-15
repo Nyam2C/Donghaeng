@@ -16,17 +16,31 @@ import { LLMRouteListSchema, RecommendRoutesInputSchema } from '../schemas'
 // Plan C "한 곳 깊게": stop 적게 (3개), 머무는 결.
 // ---------------------------------------------------------------------------
 
-function pickStops(ids: string[], count: number): Array<{ poi_id: string; order: number }> {
+// D38 — mock 도 편지 일정 (SPECIAL v1.6) 용 timeHint 채움. 기본 5 stop 흐름 = 모닝/책방/점심/오후/저녁.
+// 실제 LLM 응답이 우선이지만 mock 으로도 letter modal 동작 검증 가능.
+const MOCK_TIME_HINTS = ['09:30', '11:30', '13:00', '15:30', '18:30', '20:30'] as const
+
+function pickStops(
+  ids: string[],
+  count: number,
+): Array<{ poi_id: string; order: number; timeHint: string }> {
   const clamped = Math.max(3, Math.min(count, ids.length, 6))
-  return ids.slice(0, clamped).map((poi_id, i) => ({ poi_id, order: i + 1 }))
+  return ids.slice(0, clamped).map((poi_id, i) => ({
+    poi_id,
+    order: i + 1,
+    timeHint: MOCK_TIME_HINTS[i] ?? '12:00',
+  }))
 }
 
-function pickStopsReversed(ids: string[], count: number): Array<{ poi_id: string; order: number }> {
+function pickStopsReversed(
+  ids: string[],
+  count: number,
+): Array<{ poi_id: string; order: number; timeHint: string }> {
   const clamped = Math.max(3, Math.min(count, ids.length, 6))
   return ids
     .slice(0, clamped)
     .reverse()
-    .map((poi_id, i) => ({ poi_id, order: i + 1 }))
+    .map((poi_id, i) => ({ poi_id, order: i + 1, timeHint: MOCK_TIME_HINTS[i] ?? '12:00' }))
 }
 
 function mockRoutes(input: RecommendRoutesInput): LLMRouteList {
@@ -97,11 +111,13 @@ ${likedLines}
 - B 는 다른 결 (stops 3-6, 같은 POI 라도 다른 순서/조합).
 - C 는 한 곳 깊게 결 (stops 3 정도, 머무는 호흡).
 - 각 stop 의 poi_id 는 *반드시 위 좋아요 list 의 id 만 사용*. 새 id 생성 X.
+- 각 stop 에 옵셔널 name (10-30자, "안목 해변" 같은 POI 표시 이름) + timeHint ("HH:MM" 24시간, "11:30" 같이) 채움 — 편지 일정 (SPECIAL v1.6) 에서 사용.
 - name 5-12자 친구 톤 ("바다 따라" "빵집 도장깨기" "한 곳 깊게" 같은 결).
 - reason 15-30자 친구 톤 ("이 흐름 어때?" 같은 호흡. AI 슬롭 X).
 - travelMin 60-300 정수 (총 이동시간 분).
 - moodStars 1-5 정수.
 - order 는 1-based, 각 route 내 방문 순서.
+- timeHint 는 자연스러운 흐름 (모닝 09-10시, 점심 12-13시, 오후 15-17시, 저녁 18-20시) 으로 분배.
 - note 15-30자 친구 톤.`
 }
 

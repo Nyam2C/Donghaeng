@@ -41,6 +41,12 @@ export interface LLMTripPoiList {
 export interface LLMRouteStop {
   poi_id: string // likedPoiIds ⊂ 검증 (D2)
   order: number // 1-based, route 내 방문 순서
+  /** D38 — 편지 일정 (SPECIAL v1.6) 용 표시 이름. POI 사용자 친화 라벨 ("안목 해변" 등).
+   *  옵셔널 — 미설정 시 frontend 는 poi_id slug 또는 placeholder. 기존 caller 0 영향. */
+  name?: string
+  /** D38 — 편지 일정 (SPECIAL v1.6) 용 시간 힌트. HH:MM (예: "11:30"). LLM 이 동선 짤 때 함께 제시.
+   *  옵셔널 — 미설정 시 day 안 stop order 로 균등 분배. 기존 caller 0 영향. */
+  timeHint?: string
 }
 
 export interface LLMRoute {
