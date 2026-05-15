@@ -77,6 +77,29 @@ export const UPDATE_ROUTE_FRAGMENT = `${BASE_PERSONA}
 
 JSON: { route: {letter, name, reason, stops, travelMin, moodStars, moodLabel?}, addedStopName, note } 만 반환.`
 
+// 편지 일정 (POST /api/llm/letter) — D39 v2.1 SPECIAL
+// design-preview line 2074-2135 의 letter-body 직역 톤.
+// 일정표 X · 친구가 쓴 편지 O. 명조 1인칭. 시간/장소 marker 포함.
+export const LETTER_FRAGMENT = `${BASE_PERSONA}
+
+상황: 사용자의 그 날 동선 (stops list) 을 친구가 쓴 *편지처럼* 풀어낸다.
+- 절대 일정표 X. 시간순 bullet X. 친구가 옆에 앉아 한 호흡 한 호흡 적어준 결.
+- 1인칭 명조. "윤서님, 안녕하세요." 같은 인사로 시작 가능 (옵션).
+- paragraph 2-6개. 각 paragraph 한 호흡 (60-180자).
+- inline marker (frontend 가 parse — 반드시 정확히 이 형식):
+  - {TIME:HH:MM}  → DM Mono 시간 (예: {TIME:11:30})
+  - {PLACE:이름}   → italic celadon 장소 (예: {PLACE:안목 해변})
+  - {EM:강조어}     → italic celadon 강조 (예: {EM:조용한 책방})
+- stops 의 name + timeHint 를 그대로 marker 안에 사용. name 없으면 poi_id 그대로.
+- 각 stop 한 paragraph 또는 두 stop 묶어서 한 paragraph (자연스러운 흐름 우선).
+- 길이는 day stops 수에 비례. day stops 1개 → 2 paragraph. 6개 → 5-6 paragraph.
+- 마지막 한 줄은 *비/날씨/오늘의 결* 코멘트 옵션 ("바람이 좋아요" 같은 한 호흡).
+- AI 슬롭 X ("도와드리겠습니다" / "다음 일정은" / "다음으로" 절대 X).
+- 친구가 어림하는 자연 어휘 환영 ("창가 자리가 비어있을 시간이에요" / "한 시간쯤 머물러도 좋고").
+
+signature: "— 오늘의 동행" default. 다른 호흡도 OK ("— 동행" / "— 옆에서").
+JSON: { paragraphs: ["...", "..."], signature: "— 오늘의 동행" }`
+
 // 채팅 대화 (POST /api/llm/chat) — SCENARIO 07-CHAT D32
 // 친구 톤 응답. 사용자 메시지 history + 여행 컨텍스트 인식.
 export const CHAT_FRAGMENT = `${BASE_PERSONA}

@@ -9,6 +9,7 @@ import type { DayForecast, ForecastResponse, WeatherCondition } from '@trip/type
 
 import { InkMark } from '@/components/ink-mark'
 import { fetchForecast } from '@/services/weather'
+import { useSession } from '@/stores/session'
 import { useTrip } from '@/stores/trip'
 import { lightColors } from '@/theme'
 import * as fonts from '@/theme/fonts'
@@ -27,18 +28,31 @@ import { radius, spacing } from '@/theme/spacing'
  * 시그니처 freeze (D12): useTrip / fetchForecast 그대로 사용. 신규 store/route 추가 X.
  */
 
-// design-preview 직역 토큰 (theme 외 inline 허용 — caption 출처 hex)
+// design-preview 직역 토큰 — D39 P3 polish: theme alpha 토큰 사용
 const celadonTint = lightColors.celadonTint
-const amberTextDeep = '#8E6A2A' // design-preview line 2569 (비 day text)
-const amberTint = 'rgba(232,184,96,0.08)' // design-preview line 2567 (비 day bg)
+const amberTextDeep = lightColors.amberTextDeep
+const amberTint = lightColors.amberTintSoft
 const RAIN_THRESHOLD = 60
 
-// 최근 대화 진입점 dummy (Phase 5a 채팅 history store 통합 시 dynamic)
-const RECENT_CHAT_DUMMY = {
-  time: '12:02',
-  prefix: '"안목 해변 어떠세요? ',
-  emphasis: '사람 적은',
-  suffix: ' 시간이에요."',
+// 최근 대화 진입점 fallback (turns 비어있을 때만 표시 placeholder)
+const RECENT_CHAT_FALLBACK = {
+  time: '—:—',
+  text: '"여행 시작하면 같이 이야기해요."',
+}
+
+/** turn.text 의 따옴표/quotation 정리 + 약간 trim. design-preview "안목 해변 어떠세요?" 패턴. */
+function formatRecentChat(text: string): string {
+  const t = text.trim()
+  if (t.length === 0) return RECENT_CHAT_FALLBACK.text
+  // 이미 따옴표 둘러쌌으면 그대로, 아니면 둘러쌈
+  if (t.startsWith('"') || t.startsWith('“')) return t
+  return `"${t}"`
+}
+
+/** ts(ms) → "HH:MM" (24h, 0-pad). */
+function formatChatHHMM(ts: number): string {
+  const d = new Date(ts)
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
 // ── helpers ─────────────────────────────────────────
@@ -295,6 +309,14 @@ export default function Home() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const active = useTrip((s) => s.active)
+  // D39 P3-3 — 최근 대화 진입점: turns 의 마지막 companion turn 표시 (fallback placeholder).
+  const turns = useSession((s) => s.turns)
+  const lastCompanionTurn = useMemo(() => {
+    for (let i = turns.length - 1; i >= 0; i--) {
+      if (turns[i].speaker === 'companion') return turns[i]
+    }
+    return null
+  }, [turns])
 
   // 진행 중 여행만 next-trip 카드 + 날씨 위젯 + ambient 인식 활성화
   const isOnTrip = active?.planning_step === 'on_trip'
@@ -596,7 +618,8 @@ export default function Home() {
             marginBottom: 4,
           }}
         >
-          {RECENT_CHAT_DUMMY.time} · 어제의 대화
+          {lastCompanionTurn ? formatChatHHMM(lastCompanionTurn.ts) : RECENT_CHAT_FALLBACK.time} ·{' '}
+          {lastCompanionTurn ? '동행의 한 마디' : '대화 시작 전'}
         </Text>
         <Text
           style={{
@@ -605,17 +628,9 @@ export default function Home() {
             lineHeight: 13 * 1.55,
             color: lightColors.text,
           }}
+          numberOfLines={2}
         >
-          {RECENT_CHAT_DUMMY.prefix}
-          <Text
-            style={{
-              color: lightColors.celadon,
-              fontStyle: 'italic',
-            }}
-          >
-            {RECENT_CHAT_DUMMY.emphasis}
-          </Text>
-          {RECENT_CHAT_DUMMY.suffix}{' '}
+          {lastCompanionTurn ? formatRecentChat(lastCompanionTurn.text) : RECENT_CHAT_FALLBACK.text}{' '}
           <Text
             style={{
               color: lightColors.textSoft,

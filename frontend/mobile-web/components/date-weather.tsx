@@ -30,9 +30,10 @@ import { radius, spacing } from '@/theme/spacing'
 
 const WEEKDAY_KOR = ['일', '월', '화', '수', '목', '금', '토'] as const
 const RAIN_THRESHOLD = 60 // rainProb ≥ 60 또는 condition='rainy' 시 amber 강조
-const RAIN_DAY_AMBER_TEXT = '#8E6A2A' // design-preview 직역. theme.amber 위 한 톤 어두운 텍스트
-const AMBER_TINT_CARD = 'rgba(232,184,96,0.10)'
-const AMBER_TINT_HINT = 'rgba(232,184,96,0.06)'
+// D39 P3 polish — theme alpha 토큰으로 이동 (3 곳 공통: home / date-weather / letter-itinerary 잠재)
+const RAIN_DAY_AMBER_TEXT = lightColors.amberTextDeep
+const AMBER_TINT_CARD = lightColors.amberTint
+const AMBER_TINT_HINT = lightColors.amberTintSoft
 
 const ORDINAL_KOR = ['', '첫째', '둘째', '셋째', '넷째', '다섯째'] as const
 

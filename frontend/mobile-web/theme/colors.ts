@@ -26,10 +26,14 @@ export const light = {
   // 보조 액센트 (희소 ↓)
   moss: '#5F8B6E', // 자연 · success
   amber: '#E8B860', // 주의 · 돌발변수
+  amberTint: 'rgba(232, 184, 96, 0.10)', // 비 day 카드 fill · design-preview line 2361
+  amberTintSoft: 'rgba(232, 184, 96, 0.06)', // 비 안내 카드 bg · design-preview line 2375
+  amberTextDeep: '#8E6A2A', // 비 day text · design-preview line 2363 + 2377 그대로
   juhong: '#C24A36', // ★ 희소 강조 (확정)
   // Line
   line: '#D9CFC1',
   lineSoft: '#E8E0D2',
+  lineStrong: 'rgba(31, 31, 31, 0.15)', // 사용자 발화 좌보더 · design-preview --line-strong
 } as const
 
 export const dark = {
@@ -48,10 +52,14 @@ export const dark = {
   // 보조
   moss: '#88B098',
   amber: '#E8C680',
+  amberTint: 'rgba(232, 198, 128, 0.12)',
+  amberTintSoft: 'rgba(232, 198, 128, 0.08)',
+  amberTextDeep: '#E8C680', // dark theme 에선 amber 톤 그대로 (텍스트 contrast 충분)
   juhong: '#E3725E',
   // Line
   line: '#3A4150',
   lineSoft: '#2D3340',
+  lineStrong: 'rgba(245, 239, 227, 0.18)', // dark theme: text 색 baseline 의 alpha
 } as const
 
 export type ColorScheme = typeof light
