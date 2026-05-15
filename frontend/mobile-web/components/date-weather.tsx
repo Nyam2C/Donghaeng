@@ -524,7 +524,7 @@ export function DateWeather({ trip }: DateWeatherProps) {
             borderWidth: 1,
             borderColor: lightColors.line,
             borderRadius: radius.card,
-            backgroundColor: lightColors.bg,
+            backgroundColor: lightColors.bgElev,
           }}
         >
           <TextInput

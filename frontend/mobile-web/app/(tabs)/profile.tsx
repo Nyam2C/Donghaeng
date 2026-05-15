@@ -67,7 +67,7 @@ export default function Profile() {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: lightColors.bg }}
+      style={{ flex: 1, backgroundColor: lightColors.bgElev }}
       contentContainerStyle={{
         paddingTop: insets.top + spacing.lg,
         paddingHorizontal: spacing.lg,

@@ -185,13 +185,13 @@ export function CompanionMap({ visible, onClose }: CompanionMapProps) {
         style={[
           {
             flex: 1,
-            backgroundColor: lightColors.bg,
+            backgroundColor: lightColors.bgElev,
           },
           animatedStyle,
         ]}
       >
         {/* 상단 미니맵 — safe area top 만큼 padding 더해 status bar 영역 보호 */}
-        <View style={{ paddingTop: insets.top, backgroundColor: lightColors.bg }}>
+        <View style={{ paddingTop: insets.top, backgroundColor: lightColors.bgElev }}>
           <MiniMap
             center={center}
             pois={miniPois}

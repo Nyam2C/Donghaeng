@@ -322,7 +322,7 @@ export default function Companion() {
     <View
       style={{
         flex: 1,
-        backgroundColor: lightColors.bg,
+        backgroundColor: lightColors.bgElev,
         paddingTop: insets.top + spacing.md,
         paddingHorizontal: spacing.lg,
       }}
@@ -410,6 +410,85 @@ export default function Companion() {
                 </Text>
               </Pressable>
             ) : null}
+
+            {/* 다음 행동 hint — 사용자가 ON-TRIP 에서 다음 동작 알 수 있게 (UX polish) */}
+            <View
+              style={{
+                marginTop: spacing.xl,
+                paddingLeft: spacing.md - 4,
+                borderLeftWidth: 2,
+                borderLeftColor: lightColors.celadon,
+                marginBottom: spacing.md,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: fonts.family.voice,
+                  fontSize: 13,
+                  lineHeight: 13 * 1.55,
+                  color: lightColors.textMuted,
+                  fontStyle: 'italic',
+                }}
+              >
+                여기 머물래요, 다른 곳으로 갈래요?
+              </Text>
+            </View>
+
+            {/* 다음 행동 actions — 다른 곳 추천 / 오늘 동선 보기 (편지) */}
+            <View style={{ flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' }}>
+              <Pressable
+                onPress={() => void loadCard()}
+                accessibilityRole="button"
+                accessibilityLabel="다른 곳 추천받기"
+                hitSlop={4}
+                style={({ pressed }) => ({
+                  paddingVertical: spacing.sm + 2,
+                  paddingHorizontal: spacing.md,
+                  borderRadius: radius.cardLarge,
+                  borderWidth: 1,
+                  borderColor: lightColors.line,
+                  backgroundColor: lightColors.bgElev,
+                  opacity: pressed ? 0.85 : 1,
+                })}
+              >
+                <Text
+                  style={{
+                    fontFamily: fonts.family.voice,
+                    fontSize: 13,
+                    color: lightColors.text,
+                  }}
+                >
+                  ↻ 다른 곳도
+                </Text>
+              </Pressable>
+              {activeTrip && activeRoute ? (
+                <Pressable
+                  onPress={onLetterPress}
+                  accessibilityRole="button"
+                  accessibilityLabel="오늘 동선 보기"
+                  hitSlop={4}
+                  style={({ pressed }) => ({
+                    paddingVertical: spacing.sm + 2,
+                    paddingHorizontal: spacing.md,
+                    borderRadius: radius.cardLarge,
+                    borderWidth: 1,
+                    borderColor: lightColors.celadon,
+                    backgroundColor: lightColors.celadonTint,
+                    opacity: pressed ? 0.85 : 1,
+                  })}
+                >
+                  <Text
+                    style={{
+                      fontFamily: fonts.family.voice,
+                      fontSize: 13,
+                      color: lightColors.celadon,
+                    }}
+                  >
+                    ✎ 오늘 동선 보기
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
           </View>
         ) : null}
       </ScrollView>

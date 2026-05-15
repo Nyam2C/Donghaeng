@@ -475,7 +475,7 @@ export function LetterItinerary({ visible, onClose, trip, activeRoute }: LetterI
         style={[
           {
             flex: 1,
-            backgroundColor: lightColors.bg,
+            backgroundColor: lightColors.bgElev,
           },
           animatedStyle,
         ]}
